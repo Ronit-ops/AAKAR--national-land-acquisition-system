@@ -4,6 +4,8 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.models.authority import Authority
+from app.models.department import Department
 from app.models.user import User
 
 
@@ -113,6 +115,69 @@ def update_user_profile(
         raise ValueError(
             "A user with this email already exists."
         ) from None
+
+    return user
+
+
+def set_user_organization(
+    db: Session,
+    user_id: UUID,
+    *,
+    department_id: UUID | None,
+    authority_id: UUID | None,
+    commit: bool = True,
+) -> User:
+    """Assign or clear a user's department and authority."""
+    user = get_user(
+        db=db,
+        user_id=user_id,
+    )
+
+    if user is None:
+        raise ValueError("User not found.")
+
+    if authority_id is not None and department_id is None:
+        raise ValueError("An authority requires a department.")
+
+    department = None
+
+    if department_id is not None:
+        department = db.get(Department, department_id)
+
+        if department is None:
+            raise ValueError("Department not found.")
+
+        if not department.is_active:
+            raise ValueError(
+                "Cannot assign a user to an inactive department."
+            )
+
+    authority = None
+
+    if authority_id is not None:
+        authority = db.get(Authority, authority_id)
+
+        if authority is None:
+            raise ValueError("Authority not found.")
+
+        if not authority.is_active:
+            raise ValueError(
+                "Cannot assign a user to an inactive authority."
+            )
+
+        if authority.department_id != department_id:
+            raise ValueError(
+                "Authority does not belong to the selected department."
+            )
+
+    user.department_id = department_id
+    user.authority_id = authority_id
+
+    if commit:
+        db.commit()
+        db.refresh(user)
+    else:
+        db.flush()
 
     return user
 

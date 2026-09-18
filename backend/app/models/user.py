@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -32,6 +32,24 @@ class User(Base):
     full_name: Mapped[str] = mapped_column(
         String(150),
         nullable=False,
+    )
+
+    department_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey(
+            "departments.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+        index=True,
+    )
+
+    authority_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey(
+            "authorities.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+        index=True,
     )
 
     is_active: Mapped[bool] = mapped_column(
@@ -65,6 +83,12 @@ class User(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+
+    department: Mapped["Department | None"] = relationship(
+        back_populates="users",
+    )
+
+    authority: Mapped["Authority | None"] = relationship()
 
     role_assignments: Mapped[list["UserRole"]] = relationship(
         back_populates="user",

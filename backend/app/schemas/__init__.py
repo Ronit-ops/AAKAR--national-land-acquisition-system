@@ -4,6 +4,20 @@ from app.schemas.auth import (
     RegisterRequest,
     UserResponse,
 )
+from app.schemas.authorities import (
+    AuthorityListResponse,
+    AuthorityResponse,
+    CreateAuthorityRequest,
+    UpdateAuthorityRequest,
+    UpdateAuthorityStatusRequest,
+)
+from app.schemas.departments import (
+    CreateDepartmentRequest,
+    DepartmentListResponse,
+    DepartmentResponse,
+    UpdateDepartmentRequest,
+    UpdateDepartmentStatusRequest,
+)
 from app.schemas.rbac import (
     RoleAssignmentRequest,
     RoleAssignmentResponse,
@@ -34,4 +48,14 @@ __all__ = [
     "UpdateManagedUserRequest",
     "UpdateUserStatusRequest",
     "UserListResponse",
+    "AuthorityListResponse",
+    "AuthorityResponse",
+    "CreateAuthorityRequest",
+    "UpdateAuthorityRequest",
+    "UpdateAuthorityStatusRequest",
+    "CreateDepartmentRequest",
+    "DepartmentListResponse",
+    "DepartmentResponse",
+    "UpdateDepartmentRequest",
+    "UpdateDepartmentStatusRequest",
 ]
