@@ -6,9 +6,13 @@ from sqlalchemy import delete, select
 from app.core.jwt import create_access_token
 from app.db.session import SessionLocal
 from app.main import app
+from app.models.authority import Authority
 from app.models.audit_event import AuditEvent
+from app.models.department import Department
 from app.models.user import User
 from app.services.auth_service import create_user
+from app.services.authority_service import create_authority
+from app.services.department_service import create_department
 from app.services.rbac_service import assign_role
 
 
@@ -221,5 +225,104 @@ def test_status_change_records_audit_event():
         finally:
             db.close()
     finally:
+        delete_test_user(admin.id)
+        delete_test_user(target.id)
+
+
+def test_organization_change_records_audit_event():
+    admin = create_system_administrator()
+    target = create_test_user(
+        full_name="Audit Organization Target",
+    )
+
+    department_id = None
+    authority_id = None
+
+    try:
+        db = SessionLocal()
+
+        try:
+            department = create_department(
+                db=db,
+                code=f"DPT-{uuid4().hex[:8].upper()}",
+                name="Audit Organization Department",
+            )
+
+            authority = create_authority(
+                db=db,
+                department_id=department.id,
+                code=f"AUTH-{uuid4().hex[:8].upper()}",
+                name="Audit Organization Authority",
+                authority_type="STATE",
+            )
+
+            department_id = department.id
+            authority_id = authority.id
+        finally:
+            db.close()
+
+        response = client.patch(
+            f"/api/v1/users/{target.id}/organization",
+            headers=auth_headers(admin),
+            json={
+                "department_id": str(department_id),
+                "authority_id": str(authority_id),
+            },
+        )
+
+        assert response.status_code == 200
+
+        body = response.json()
+
+        assert body["id"] == str(target.id)
+
+        db = SessionLocal()
+
+        try:
+            event = db.scalar(
+                select(AuditEvent).where(
+                    AuditEvent.actor_user_id == admin.id,
+                    AuditEvent.entity_id == target.id,
+                    AuditEvent.action == "user_organization_changed",
+                )
+            )
+
+            assert event is not None
+            assert event.entity_type == "user"
+            assert event.result == "success"
+            assert event.details == {
+                "department_id": str(department_id),
+                "authority_id": str(authority_id),
+            }
+        finally:
+            db.close()
+
+    finally:
+        if authority_id is not None:
+            db = SessionLocal()
+
+            try:
+                authority = db.get(Authority, authority_id)
+
+                if authority is not None:
+                    db.delete(authority)
+
+                db.commit()
+            finally:
+                db.close()
+
+        if department_id is not None:
+            db = SessionLocal()
+
+            try:
+                department = db.get(Department, department_id)
+
+                if department is not None:
+                    db.delete(department)
+
+                db.commit()
+            finally:
+                db.close()
+
         delete_test_user(admin.id)
         delete_test_user(target.id)

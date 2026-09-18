@@ -43,3 +43,8 @@ class UpdateManagedUserRequest(BaseModel):
 
 class UpdateUserStatusRequest(BaseModel):
     is_active: bool
+
+
+class UpdateUserOrganizationRequest(BaseModel):
+    department_id: UUID | None = None
+    authority_id: UUID | None = None

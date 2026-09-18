@@ -13,6 +13,7 @@ from app.schemas.users import (
     ManagedUserDetailResponse,
     ManagedUserResponse,
     UpdateManagedUserRequest,
+    UpdateUserOrganizationRequest,
     UpdateUserStatusRequest,
     UserListResponse,
 )
@@ -23,6 +24,7 @@ from app.services.user_management_service import (
     get_user,
     list_users,
     set_user_active_status,
+    set_user_organization,
     update_user_profile,
 )
 
@@ -236,6 +238,94 @@ def update_managed_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to update the user profile.",
+        ) from None
+
+    return ManagedUserResponse.model_validate(user)
+
+
+@router.patch(
+    "/{user_id}/organization",
+    response_model=ManagedUserResponse,
+)
+def update_managed_user_organization(
+    user_id: UUID,
+    payload: UpdateUserOrganizationRequest,
+    current_user: SystemAdministrator,
+    db: Session = Depends(get_db),
+) -> ManagedUserResponse:
+    try:
+        user = set_user_organization(
+            db=db,
+            user_id=user_id,
+            department_id=payload.department_id,
+            authority_id=payload.authority_id,
+            commit=False,
+        )
+    except ValueError as error:
+        message = str(error)
+
+        if message == "User not found.":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=message,
+            ) from None
+
+        if message in {
+            "Department not found.",
+            "Authority not found.",
+        }:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=message,
+            ) from None
+
+        if message in {
+            "Cannot assign a user to an inactive department.",
+            "Cannot assign a user to an inactive authority.",
+            "Authority does not belong to the selected department.",
+            "An authority requires a department.",
+        }:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=message,
+            ) from None
+
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=message,
+        ) from None
+
+    try:
+        record_audit_event(
+            db=db,
+            actor_user_id=current_user.id,
+            action="user_organization_changed",
+            entity_type="user",
+            entity_id=user.id,
+            details={
+                "department_id": (
+                    str(user.department_id)
+                    if user.department_id is not None
+                    else None
+                ),
+                "authority_id": (
+                    str(user.authority_id)
+                    if user.authority_id is not None
+                    else None
+                ),
+            },
+            commit=False,
+        )
+
+        db.commit()
+        db.refresh(user)
+
+    except SQLAlchemyError:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to update the user's organization.",
         ) from None
 
     return ManagedUserResponse.model_validate(user)

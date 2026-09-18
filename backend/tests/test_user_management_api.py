@@ -449,3 +449,391 @@ def test_non_administrator_cannot_update_user():
     finally:
         delete_test_user(user.id)
         delete_test_user(target.id)
+from app.models.authority import Authority
+from app.models.department import Department
+from app.services.authority_service import create_authority
+from app.services.department_service import create_department
+
+
+def create_test_department(
+    *,
+    name: str = "API Test Department",
+    is_active: bool = True,
+) -> Department:
+    db = SessionLocal()
+
+    try:
+        department = create_department(
+            db=db,
+            code=f"DPT-{uuid4().hex[:8].upper()}",
+            name=name,
+        )
+
+        if not is_active:
+            department.is_active = False
+            db.commit()
+            db.refresh(department)
+
+        return department
+    finally:
+        db.close()
+
+
+def create_test_authority(
+    *,
+    department_id,
+    name: str = "API Test Authority",
+    is_active: bool = True,
+) -> Authority:
+    db = SessionLocal()
+
+    try:
+        authority = create_authority(
+            db=db,
+            department_id=department_id,
+            code=f"AUTH-{uuid4().hex[:8].upper()}",
+            name=name,
+            authority_type="STATE",
+        )
+
+        if not is_active:
+            authority.is_active = False
+            db.commit()
+            db.refresh(authority)
+
+        return authority
+    finally:
+        db.close()
+
+
+def delete_test_authority(authority_id) -> None:
+    db = SessionLocal()
+
+    try:
+        authority = db.get(Authority, authority_id)
+
+        if authority is not None:
+            db.delete(authority)
+
+        db.commit()
+    finally:
+        db.close()
+
+
+def delete_test_department(department_id) -> None:
+    db = SessionLocal()
+
+    try:
+        department = db.get(Department, department_id)
+
+        if department is not None:
+            db.delete(department)
+
+        db.commit()
+    finally:
+        db.close()
+
+
+def test_system_administrator_can_assign_user_organization():
+    admin = create_system_administrator()
+    target = create_test_user(
+        full_name="Organization Assignment Target",
+    )
+    department = create_test_department()
+    authority = create_test_authority(
+        department_id=department.id,
+    )
+
+    try:
+        response = client.patch(
+            f"/api/v1/users/{target.id}/organization",
+            headers=auth_headers(admin),
+            json={
+                "department_id": str(department.id),
+                "authority_id": str(authority.id),
+            },
+        )
+
+        assert response.status_code == 200
+
+        body = response.json()
+
+        assert body["id"] == str(target.id)
+
+        db = SessionLocal()
+
+        try:
+            updated_user = db.get(User, target.id)
+
+            assert updated_user is not None
+            assert updated_user.department_id == department.id
+            assert updated_user.authority_id == authority.id
+        finally:
+            db.close()
+    finally:
+        delete_test_user(admin.id)
+        delete_test_user(target.id)
+        delete_test_authority(authority.id)
+        delete_test_department(department.id)
+
+
+def test_system_administrator_can_assign_department_without_authority():
+    admin = create_system_administrator()
+    target = create_test_user(
+        full_name="Department Only Target",
+    )
+    department = create_test_department()
+
+    try:
+        response = client.patch(
+            f"/api/v1/users/{target.id}/organization",
+            headers=auth_headers(admin),
+            json={
+                "department_id": str(department.id),
+                "authority_id": None,
+            },
+        )
+
+        assert response.status_code == 200
+
+        db = SessionLocal()
+
+        try:
+            updated_user = db.get(User, target.id)
+
+            assert updated_user is not None
+            assert updated_user.department_id == department.id
+            assert updated_user.authority_id is None
+        finally:
+            db.close()
+    finally:
+        delete_test_user(admin.id)
+        delete_test_user(target.id)
+        delete_test_department(department.id)
+
+
+def test_system_administrator_can_clear_user_organization():
+    admin = create_system_administrator()
+    target = create_test_user(
+        full_name="Organization Clear Target",
+    )
+    department = create_test_department()
+    authority = create_test_authority(
+        department_id=department.id,
+    )
+
+    try:
+        setup_response = client.patch(
+            f"/api/v1/users/{target.id}/organization",
+            headers=auth_headers(admin),
+            json={
+                "department_id": str(department.id),
+                "authority_id": str(authority.id),
+            },
+        )
+
+        assert setup_response.status_code == 200
+
+        response = client.patch(
+            f"/api/v1/users/{target.id}/organization",
+            headers=auth_headers(admin),
+            json={
+                "department_id": None,
+                "authority_id": None,
+            },
+        )
+
+        assert response.status_code == 200
+
+        db = SessionLocal()
+
+        try:
+            updated_user = db.get(User, target.id)
+
+            assert updated_user is not None
+            assert updated_user.department_id is None
+            assert updated_user.authority_id is None
+        finally:
+            db.close()
+    finally:
+        delete_test_user(admin.id)
+        delete_test_user(target.id)
+        delete_test_authority(authority.id)
+        delete_test_department(department.id)
+
+
+def test_organization_rejects_authority_without_department():
+    admin = create_system_administrator()
+    target = create_test_user(
+        full_name="Authority Without Department Target",
+    )
+    department = create_test_department()
+    authority = create_test_authority(
+        department_id=department.id,
+    )
+
+    try:
+        response = client.patch(
+            f"/api/v1/users/{target.id}/organization",
+            headers=auth_headers(admin),
+            json={
+                "department_id": None,
+                "authority_id": str(authority.id),
+            },
+        )
+
+        assert response.status_code == 422
+        assert response.json()["detail"] == "An authority requires a department."
+    finally:
+        delete_test_user(admin.id)
+        delete_test_user(target.id)
+        delete_test_authority(authority.id)
+        delete_test_department(department.id)
+
+
+def test_organization_rejects_inactive_department():
+    admin = create_system_administrator()
+    target = create_test_user(
+        full_name="Inactive Department Target",
+    )
+    department = create_test_department(
+        is_active=False,
+    )
+
+    try:
+        response = client.patch(
+            f"/api/v1/users/{target.id}/organization",
+            headers=auth_headers(admin),
+            json={
+                "department_id": str(department.id),
+                "authority_id": None,
+            },
+        )
+
+        assert response.status_code == 422
+        assert (
+            response.json()["detail"]
+            == "Cannot assign a user to an inactive department."
+        )
+    finally:
+        delete_test_user(admin.id)
+        delete_test_user(target.id)
+        delete_test_department(department.id)
+
+
+def test_organization_rejects_inactive_authority():
+    admin = create_system_administrator()
+    target = create_test_user(
+        full_name="Inactive Authority Target",
+    )
+    department = create_test_department()
+    authority = create_test_authority(
+        department_id=department.id,
+        is_active=False,
+    )
+
+    try:
+        response = client.patch(
+            f"/api/v1/users/{target.id}/organization",
+            headers=auth_headers(admin),
+            json={
+                "department_id": str(department.id),
+                "authority_id": str(authority.id),
+            },
+        )
+
+        assert response.status_code == 422
+        assert (
+            response.json()["detail"]
+            == "Cannot assign a user to an inactive authority."
+        )
+    finally:
+        delete_test_user(admin.id)
+        delete_test_user(target.id)
+        delete_test_authority(authority.id)
+        delete_test_department(department.id)
+
+
+def test_organization_rejects_authority_from_different_department():
+    admin = create_system_administrator()
+    target = create_test_user(
+        full_name="Mismatched Authority Target",
+    )
+    first_department = create_test_department(
+        name="First API Department",
+    )
+    second_department = create_test_department(
+        name="Second API Department",
+    )
+    authority = create_test_authority(
+        department_id=second_department.id,
+    )
+
+    try:
+        response = client.patch(
+            f"/api/v1/users/{target.id}/organization",
+            headers=auth_headers(admin),
+            json={
+                "department_id": str(first_department.id),
+                "authority_id": str(authority.id),
+            },
+        )
+
+        assert response.status_code == 422
+        assert (
+            response.json()["detail"]
+            == "Authority does not belong to the selected department."
+        )
+    finally:
+        delete_test_user(admin.id)
+        delete_test_user(target.id)
+        delete_test_authority(authority.id)
+        delete_test_department(first_department.id)
+        delete_test_department(second_department.id)
+
+
+def test_organization_unknown_user_returns_404():
+    admin = create_system_administrator()
+    department = create_test_department()
+
+    try:
+        response = client.patch(
+            f"/api/v1/users/{uuid4()}/organization",
+            headers=auth_headers(admin),
+            json={
+                "department_id": str(department.id),
+                "authority_id": None,
+            },
+        )
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "User not found."
+    finally:
+        delete_test_user(admin.id)
+        delete_test_department(department.id)
+
+
+def test_non_administrator_cannot_update_user_organization():
+    user = create_test_user(
+        full_name="Regular Organization Operator",
+    )
+    target = create_test_user(
+        full_name="Protected Organization Target",
+    )
+    department = create_test_department()
+
+    try:
+        response = client.patch(
+            f"/api/v1/users/{target.id}/organization",
+            headers=auth_headers(user),
+            json={
+                "department_id": str(department.id),
+                "authority_id": None,
+            },
+        )
+
+        assert response.status_code == 403
+    finally:
+        delete_test_user(user.id)
+        delete_test_user(target.id)
+        delete_test_department(department.id)
