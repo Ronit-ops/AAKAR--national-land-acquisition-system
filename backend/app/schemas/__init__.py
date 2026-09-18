@@ -10,6 +10,14 @@ from app.schemas.rbac import (
     RoleResponse,
     UserRolesResponse,
 )
+from app.schemas.users import (
+    CreateManagedUserRequest,
+    ManagedUserDetailResponse,
+    ManagedUserResponse,
+    UpdateManagedUserRequest,
+    UpdateUserStatusRequest,
+    UserListResponse,
+)
 
 __all__ = [
     "LoginRequest",
@@ -20,4 +28,10 @@ __all__ = [
     "RoleAssignmentResponse",
     "RoleResponse",
     "UserRolesResponse",
+    "CreateManagedUserRequest",
+    "ManagedUserDetailResponse",
+    "ManagedUserResponse",
+    "UpdateManagedUserRequest",
+    "UpdateUserStatusRequest",
+    "UserListResponse",
 ]

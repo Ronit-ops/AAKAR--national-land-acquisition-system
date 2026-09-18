@@ -5,6 +5,14 @@ import type {
   User,
 } from '../types/auth';
 import type { UserRolesResponse } from '../types/rbac';
+import type {
+  CreateManagedUserRequest,
+  ManagedUser,
+  ManagedUserDetail,
+  UpdateManagedUserRequest,
+  UpdateUserStatusRequest,
+  UserListResponse,
+} from '../types/users';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api/v1';
@@ -59,6 +67,10 @@ async function request<T>(
     throw new Error(message);
   }
 
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   return (await response.json()) as T;
 }
 
@@ -90,4 +102,72 @@ export async function getCurrentUser(): Promise<User> {
 
 export async function getMyRoles(): Promise<UserRolesResponse> {
   return request<UserRolesResponse>('/rbac/me');
+}
+
+export async function listManagedUsers(
+  params: {
+    search?: string;
+    is_active?: boolean;
+    offset?: number;
+    limit?: number;
+  } = {},
+): Promise<UserListResponse> {
+  const searchParams = new URLSearchParams();
+
+  if (params.search) {
+    searchParams.set('search', params.search);
+  }
+
+  if (params.is_active !== undefined) {
+    searchParams.set('is_active', String(params.is_active));
+  }
+
+  if (params.offset !== undefined) {
+    searchParams.set('offset', String(params.offset));
+  }
+
+  if (params.limit !== undefined) {
+    searchParams.set('limit', String(params.limit));
+  }
+
+  const query = searchParams.toString();
+
+  return request<UserListResponse>(
+    `/users${query ? `?${query}` : ''}`,
+  );
+}
+
+export async function getManagedUser(
+  userId: string,
+): Promise<ManagedUserDetail> {
+  return request<ManagedUserDetail>(`/users/${userId}`);
+}
+
+export async function createManagedUser(
+  payload: CreateManagedUserRequest,
+): Promise<ManagedUser> {
+  return request<ManagedUser>('/users', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateManagedUser(
+  userId: string,
+  payload: UpdateManagedUserRequest,
+): Promise<ManagedUser> {
+  return request<ManagedUser>(`/users/${userId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateManagedUserStatus(
+  userId: string,
+  payload: UpdateUserStatusRequest,
+): Promise<ManagedUser> {
+  return request<ManagedUser>(`/users/${userId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
 }

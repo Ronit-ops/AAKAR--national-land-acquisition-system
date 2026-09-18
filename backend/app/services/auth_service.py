@@ -25,6 +25,8 @@ def create_user(
     email: str,
     password: str,
     full_name: str,
+    *,
+    commit: bool = True,
 ) -> User:
     """Create a new user with a securely hashed password."""
     normalized_email = email.strip().lower()
@@ -36,8 +38,12 @@ def create_user(
     )
 
     db.add(user)
-    db.commit()
-    db.refresh(user)
+
+    if commit:
+        db.commit()
+        db.refresh(user)
+    else:
+        db.flush()
 
     return user
 
