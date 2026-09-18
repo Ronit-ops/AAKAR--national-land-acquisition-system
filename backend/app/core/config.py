@@ -18,6 +18,14 @@ class Settings(BaseSettings):
 
     database_url: str
 
+    jwt_secret_key: str
+    jwt_algorithm: str = Field(default="HS256")
+    jwt_access_token_expire_minutes: int = Field(
+        default=30,
+        ge=5,
+        le=1440,
+    )
+
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,
         env_file_encoding="utf-8",
