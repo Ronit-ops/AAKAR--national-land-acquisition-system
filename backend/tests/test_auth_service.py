@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from sqlalchemy import delete
 
 from app.db.session import SessionLocal
@@ -97,6 +99,37 @@ def test_authenticate_user_with_correct_password():
 
         assert user is not None
         assert user.email == TEST_EMAIL
+    finally:
+        db.close()
+        cleanup_test_user()
+
+
+def test_authenticate_user_sets_last_login_at():
+    cleanup_test_user()
+
+    db = SessionLocal()
+
+    try:
+        create_user(
+            db=db,
+            email=TEST_EMAIL,
+            password=TEST_PASSWORD,
+            full_name=TEST_NAME,
+        )
+
+        before_login = datetime.now(timezone.utc)
+
+        user = authenticate_user(
+            db=db,
+            email=TEST_EMAIL,
+            password=TEST_PASSWORD,
+        )
+
+        after_login = datetime.now(timezone.utc)
+
+        assert user is not None
+        assert user.last_login_at is not None
+        assert before_login <= user.last_login_at <= after_login
     finally:
         db.close()
         cleanup_test_user()

@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import select
@@ -46,7 +47,7 @@ def authenticate_user(
     email: str,
     password: str,
 ) -> User | None:
-    """Authenticate a user using email and password."""
+    """Authenticate a user and record the successful login time."""
     user = get_user_by_email(db, email)
 
     if user is None:
@@ -57,6 +58,11 @@ def authenticate_user(
 
     if not verify_password(password, user.password_hash):
         return None
+
+    user.last_login_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(user)
 
     return user
 
