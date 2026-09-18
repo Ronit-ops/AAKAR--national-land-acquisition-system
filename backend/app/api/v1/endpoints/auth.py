@@ -1,10 +1,21 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
+from app.core.jwt import create_access_token
 from app.db.session import get_db
-from app.schemas.auth import RegisterRequest, UserResponse
-from app.services.auth_service import create_user, get_user_by_email
+from app.schemas.auth import (
+    LoginRequest,
+    LoginResponse,
+    RegisterRequest,
+    UserResponse,
+)
+from app.services.auth_service import (
+    authenticate_user,
+    create_user,
+    get_user_by_email,
+)
 
 
 router = APIRouter(
@@ -30,8 +41,6 @@ def register(
     )
 
     if existing_user is not None:
-        from fastapi import HTTPException
-
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="A user with this email already exists.",
@@ -47,11 +56,43 @@ def register(
     except IntegrityError:
         db.rollback()
 
-        from fastapi import HTTPException
-
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="A user with this email already exists.",
         ) from None
 
     return UserResponse.model_validate(user)
+
+
+@router.post(
+    "/login",
+    response_model=LoginResponse,
+    status_code=status.HTTP_200_OK,
+)
+def login(
+    payload: LoginRequest,
+    db: Session = Depends(get_db),
+) -> LoginResponse:
+    """Authenticate a user and return a JWT access token."""
+
+    user = authenticate_user(
+        db=db,
+        email=payload.email,
+        password=payload.password,
+    )
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token = create_access_token(user.id)
+
+    return LoginResponse(
+        access_token=access_token,
+        token_type="bearer",
+        expires_in=settings.jwt_access_token_expire_minutes * 60,
+        user=UserResponse.model_validate(user),
+    )
