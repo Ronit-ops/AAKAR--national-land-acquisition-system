@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_user
 from app.core.config import settings
 from app.core.jwt import create_access_token
 from app.db.session import get_db
+from app.models.user import User
 from app.schemas.auth import (
     LoginRequest,
     LoginResponse,
@@ -96,3 +98,16 @@ def login(
         expires_in=settings.jwt_access_token_expire_minutes * 60,
         user=UserResponse.model_validate(user),
     )
+
+
+@router.get(
+    "/me",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+)
+def get_current_user_profile(
+    current_user: User = Depends(get_current_user),
+) -> UserResponse:
+    """Return the currently authenticated user's profile."""
+
+    return UserResponse.model_validate(current_user)
