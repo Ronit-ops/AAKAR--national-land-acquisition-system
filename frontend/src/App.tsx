@@ -4,17 +4,29 @@ import {
   clearAccessToken,
   getAccessToken,
   getCurrentUser,
+  getMyRoles,
   loginUser,
   registerUser,
 } from './lib/api';
 import type { User } from './types/auth';
+import type { Role } from './types/rbac';
 import './App.css';
 
 type AuthMode = 'login' | 'register';
 
+function formatScopeLevel(scopeLevel: string): string {
+  return scopeLevel
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
 function App() {
   const [mode, setMode] = useState<AuthMode>('login');
   const [user, setUser] = useState<User | null>(null);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+  const [rolesError, setRolesError] = useState('');
   const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
@@ -37,6 +49,52 @@ function App() {
     void restoreSession();
   }, []);
 
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadRoles = async () => {
+      setRolesLoading(true);
+      setRolesError('');
+
+      try {
+        const response = await getMyRoles();
+
+        if (!cancelled) {
+          setRoles(response.roles);
+        }
+      } catch (requestError) {
+        if (!cancelled) {
+          setRolesError(
+            requestError instanceof Error
+              ? requestError.message
+              : 'Unable to load your roles.',
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setRolesLoading(false);
+        }
+      }
+    };
+
+    void loadRoles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const handleSignOut = () => {
+    clearAccessToken();
+    setRoles([]);
+    setRolesError('');
+    setUser(null);
+  };
+
   if (checkingSession) {
     return (
       <main className="auth-shell">
@@ -54,6 +112,7 @@ function App() {
         <header className="app-header">
           <div className="brand">
             <div className="brand-mark brand-mark-small">आ</div>
+
             <div>
               <strong>AAKAR</strong>
               <span>आकार</span>
@@ -63,10 +122,7 @@ function App() {
           <button
             type="button"
             className="ghost-button"
-            onClick={() => {
-              clearAccessToken();
-              setUser(null);
-            }}
+            onClick={handleSignOut}
           >
             Sign out
           </button>
@@ -109,11 +165,71 @@ function App() {
             </div>
           </div>
 
-          <div className="next-module-note">
-            <span>AAKAR</span>
-            Authorized modules will become available as role and permission
-            controls are added.
-          </div>
+          <section className="roles-section">
+            <div className="roles-heading">
+              <div>
+                <p className="roles-eyebrow">ACCESS CONTROL</p>
+                <h2>Assigned roles</h2>
+              </div>
+
+              {rolesLoading && (
+                <span className="roles-loading">Loading roles...</span>
+              )}
+            </div>
+
+            {rolesError && (
+              <div className="error-message" role="alert">
+                {rolesError}
+              </div>
+            )}
+
+            {!rolesLoading && !rolesError && roles.length === 0 && (
+              <div className="no-role-card">
+                <span className="no-role-icon">!</span>
+
+                <div>
+                  <strong>No role assigned</strong>
+                  <p>
+                    Your account is authenticated, but no active AAKAR role is
+                    currently assigned.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {!rolesLoading && !rolesError && roles.length > 0 && (
+              <div className="role-list">
+                {roles.map((role) => (
+                  <article className="role-card" key={role.id}>
+                    <div className="role-card-top">
+                      <div>
+                        <span className="role-code">{role.code}</span>
+                        <h3>{role.name}</h3>
+                      </div>
+
+                      <span className="scope-badge">
+                        {formatScopeLevel(role.scope_level)}
+                      </span>
+                    </div>
+
+                    {role.description && (
+                      <p className="role-description">
+                        {role.description}
+                      </p>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
+
+            <div className="authorization-note">
+              <span>AAKAR</span>
+              <p>
+                Role information is loaded from the backend. Actual access to
+                protected resources is enforced by server-side authorization.
+              </p>
+            </div>
+          </section>
         </section>
       </main>
     );
@@ -129,6 +245,7 @@ function App() {
         <div className="visual-content">
           <div className="brand">
             <div className="brand-mark">आ</div>
+
             <div>
               <strong>AAKAR</strong>
               <span>आकार</span>
@@ -137,7 +254,13 @@ function App() {
 
           <div className="visual-copy">
             <p className="eyebrow">NATIONAL LAND MANAGEMENT SYSTEM</p>
-            <h1>Shaping land.<br />Empowering development.</h1>
+
+            <h1>
+              Shaping land.
+              <br />
+              Empowering development.
+            </h1>
+
             <p>
               Secure access to the AAKAR platform for digital land acquisition
               workflows, records, and operational monitoring.
@@ -155,6 +278,7 @@ function App() {
         <div className="auth-card">
           <div className="mobile-brand">
             <div className="brand-mark">आ</div>
+
             <div>
               <strong>AAKAR</strong>
               <span>आकार</span>
@@ -226,6 +350,7 @@ function LoginForm({
       <form className="auth-form" onSubmit={handleSubmit}>
         <label htmlFor="login-email">
           Email address
+
           <input
             id="login-email"
             type="email"
@@ -239,6 +364,7 @@ function LoginForm({
 
         <label htmlFor="login-password">
           Password
+
           <input
             id="login-password"
             type="password"
@@ -263,6 +389,7 @@ function LoginForm({
 
       <p className="auth-switch">
         New to AAKAR?
+
         <button type="button" onClick={onSwitchToRegister}>
           Create an account
         </button>
@@ -326,6 +453,7 @@ function RegisterForm({
       <form className="auth-form" onSubmit={handleSubmit}>
         <label htmlFor="register-name">
           Full name
+
           <input
             id="register-name"
             type="text"
@@ -341,6 +469,7 @@ function RegisterForm({
 
         <label htmlFor="register-email">
           Email address
+
           <input
             id="register-email"
             type="email"
@@ -354,6 +483,7 @@ function RegisterForm({
 
         <label htmlFor="register-password">
           Password
+
           <input
             id="register-password"
             type="password"
@@ -386,6 +516,7 @@ function RegisterForm({
 
       <p className="auth-switch">
         Already have an account?
+
         <button
           type="button"
           onClick={() => {

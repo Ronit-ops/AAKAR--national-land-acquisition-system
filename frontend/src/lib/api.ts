@@ -4,6 +4,7 @@ import type {
   RegisterRequest,
   User,
 } from '../types/auth';
+import type { UserRolesResponse } from '../types/rbac';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api/v1';
@@ -85,4 +86,8 @@ export async function loginUser(
 
 export async function getCurrentUser(): Promise<User> {
   return request<User>('/auth/me');
+}
+
+export async function getMyRoles(): Promise<UserRolesResponse> {
+  return request<UserRolesResponse>('/rbac/me');
 }

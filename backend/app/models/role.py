@@ -1,37 +1,49 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, String, func
+from sqlalchemy import Boolean, DateTime, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
 
-class User(Base):
-    """Application user used for authentication."""
+class Role(Base):
+    """System role used for role-based access control."""
 
-    __tablename__ = "users"
+    __tablename__ = "roles"
 
     id: Mapped[UUID] = mapped_column(
         primary_key=True,
         default=uuid4,
     )
 
-    email: Mapped[str] = mapped_column(
-        String(320),
+    code: Mapped[str] = mapped_column(
+        String(80),
         unique=True,
         index=True,
         nullable=False,
     )
 
-    password_hash: Mapped[str] = mapped_column(
-        String(255),
+    name: Mapped[str] = mapped_column(
+        String(150),
         nullable=False,
     )
 
-    full_name: Mapped[str] = mapped_column(
-        String(150),
+    scope_level: Mapped[str] = mapped_column(
+        String(30),
         nullable=False,
+    )
+
+    description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    is_system_role: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default="true",
     )
 
     is_active: Mapped[bool] = mapped_column(
@@ -39,18 +51,6 @@ class User(Base):
         nullable=False,
         default=True,
         server_default="true",
-    )
-
-    is_email_verified: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False,
-        default=False,
-        server_default="false",
-    )
-
-    last_login_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -66,7 +66,6 @@ class User(Base):
         onupdate=func.now(),
     )
 
-    role_assignments: Mapped[list["UserRole"]] = relationship(
-        back_populates="user",
-        cascade="all, delete-orphan",
+    user_assignments: Mapped[list["UserRole"]] = relationship(
+        back_populates="role",
     )
