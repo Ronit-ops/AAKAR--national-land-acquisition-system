@@ -28,3 +28,12 @@ class UserResponse(BaseModel):
     full_name: str
     is_active: bool
     is_email_verified: bool
+
+
+class LoginResponse(BaseModel):
+    """Response returned after successful authentication."""
+
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    user: UserResponse
