@@ -13,6 +13,19 @@ import type {
   UpdateUserStatusRequest,
   UserListResponse,
 } from '../types/users';
+import type {
+  Authority,
+  AuthorityListResponse,
+  CreateAuthorityRequest,
+  CreateDepartmentRequest,
+  Department,
+  DepartmentListResponse,
+  UpdateAuthorityRequest,
+  UpdateAuthorityStatusRequest,
+  UpdateDepartmentRequest,
+  UpdateDepartmentStatusRequest,
+  UpdateUserOrganizationRequest,
+} from '../types/organization';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api/v1';
@@ -104,6 +117,10 @@ export async function getMyRoles(): Promise<UserRolesResponse> {
   return request<UserRolesResponse>('/rbac/me');
 }
 
+/* -------------------------------------------------------------------------- */
+/* User Management                                                           */
+/* -------------------------------------------------------------------------- */
+
 export async function listManagedUsers(
   params: {
     search?: string;
@@ -167,6 +184,170 @@ export async function updateManagedUserStatus(
   payload: UpdateUserStatusRequest,
 ): Promise<ManagedUser> {
   return request<ManagedUser>(`/users/${userId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateManagedUserOrganization(
+  userId: string,
+  payload: UpdateUserOrganizationRequest,
+): Promise<ManagedUser> {
+  return request<ManagedUser>(`/users/${userId}/organization`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Department Management                                                     */
+/* -------------------------------------------------------------------------- */
+
+export async function listDepartments(
+  params: {
+    search?: string;
+    is_active?: boolean;
+    offset?: number;
+    limit?: number;
+  } = {},
+): Promise<DepartmentListResponse> {
+  const searchParams = new URLSearchParams();
+
+  if (params.search) {
+    searchParams.set('search', params.search);
+  }
+
+  if (params.is_active !== undefined) {
+    searchParams.set('is_active', String(params.is_active));
+  }
+
+  if (params.offset !== undefined) {
+    searchParams.set('offset', String(params.offset));
+  }
+
+  if (params.limit !== undefined) {
+    searchParams.set('limit', String(params.limit));
+  }
+
+  const query = searchParams.toString();
+
+  return request<DepartmentListResponse>(
+    `/departments${query ? `?${query}` : ''}`,
+  );
+}
+
+export async function getDepartment(
+  departmentId: string,
+): Promise<Department> {
+  return request<Department>(`/departments/${departmentId}`);
+}
+
+export async function createDepartment(
+  payload: CreateDepartmentRequest,
+): Promise<Department> {
+  return request<Department>('/departments', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateDepartment(
+  departmentId: string,
+  payload: UpdateDepartmentRequest,
+): Promise<Department> {
+  return request<Department>(`/departments/${departmentId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateDepartmentStatus(
+  departmentId: string,
+  payload: UpdateDepartmentStatusRequest,
+): Promise<Department> {
+  return request<Department>(`/departments/${departmentId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Authority Management                                                      */
+/* -------------------------------------------------------------------------- */
+
+export async function listAuthorities(
+  params: {
+    search?: string;
+    department_id?: string;
+    authority_type?: string;
+    is_active?: boolean;
+    offset?: number;
+    limit?: number;
+  } = {},
+): Promise<AuthorityListResponse> {
+  const searchParams = new URLSearchParams();
+
+  if (params.search) {
+    searchParams.set('search', params.search);
+  }
+
+  if (params.department_id) {
+    searchParams.set('department_id', params.department_id);
+  }
+
+  if (params.authority_type) {
+    searchParams.set('authority_type', params.authority_type);
+  }
+
+  if (params.is_active !== undefined) {
+    searchParams.set('is_active', String(params.is_active));
+  }
+
+  if (params.offset !== undefined) {
+    searchParams.set('offset', String(params.offset));
+  }
+
+  if (params.limit !== undefined) {
+    searchParams.set('limit', String(params.limit));
+  }
+
+  const query = searchParams.toString();
+
+  return request<AuthorityListResponse>(
+    `/authorities${query ? `?${query}` : ''}`,
+  );
+}
+
+export async function getAuthority(
+  authorityId: string,
+): Promise<Authority> {
+  return request<Authority>(`/authorities/${authorityId}`);
+}
+
+export async function createAuthority(
+  payload: CreateAuthorityRequest,
+): Promise<Authority> {
+  return request<Authority>('/authorities', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAuthority(
+  authorityId: string,
+  payload: UpdateAuthorityRequest,
+): Promise<Authority> {
+  return request<Authority>(`/authorities/${authorityId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAuthorityStatus(
+  authorityId: string,
+  payload: UpdateAuthorityStatusRequest,
+): Promise<Authority> {
+  return request<Authority>(`/authorities/${authorityId}/status`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   });

@@ -20,10 +20,12 @@ import type {
   ManagedUserDetail,
   UpdateManagedUserRequest,
 } from './types/users';
+import DepartmentManagementWorkspace from './components/DepartmentManagementWorkspace';
+import AuthorityManagementWorkspace from './components/AuthorityManagementWorkspace';
 import './App.css';
 
 type AuthMode = 'login' | 'register';
-type WorkspaceMode = 'overview' | 'users';
+type WorkspaceMode = 'overview' | 'users' | 'departments' | 'authorities';
 
 function formatScopeLevel(scopeLevel: string): string {
   return scopeLevel
@@ -161,17 +163,43 @@ function App() {
 
           <div className="header-actions">
             {isSystemAdministrator && (
-              <button
-                type="button"
-                className={
-                  workspace === 'users'
-                    ? 'workspace-button workspace-button-active'
-                    : 'workspace-button'
-                }
-                onClick={() => setWorkspace('users')}
-              >
-                User Management
-              </button>
+              <>
+                <button
+                  type="button"
+                  className={
+                    workspace === 'users'
+                      ? 'workspace-button workspace-button-active'
+                      : 'workspace-button'
+                  }
+                  onClick={() => setWorkspace('users')}
+                >
+                  User Management
+                </button>
+
+                <button
+                  type="button"
+                  className={
+                    workspace === 'departments'
+                      ? 'workspace-button workspace-button-active'
+                      : 'workspace-button'
+                  }
+                  onClick={() => setWorkspace('departments')}
+                >
+                  Department Management
+                </button>
+
+                <button
+                  type="button"
+                  className={
+                    workspace === 'authorities'
+                      ? 'workspace-button workspace-button-active'
+                      : 'workspace-button'
+                  }
+                  onClick={() => setWorkspace('authorities')}
+                >
+                  Authority Management
+                </button>
+              </>
             )}
 
             <button
@@ -186,6 +214,10 @@ function App() {
 
         {workspace === 'users' && isSystemAdministrator ? (
           <UserManagementWorkspace currentUser={user} />
+        ) : workspace === 'departments' && isSystemAdministrator ? (
+          <DepartmentManagementWorkspace />
+        ) : workspace === 'authorities' && isSystemAdministrator ? (
+          <AuthorityManagementWorkspace />
         ) : (
           <section className="session-card">
             <div className="status-badge">
