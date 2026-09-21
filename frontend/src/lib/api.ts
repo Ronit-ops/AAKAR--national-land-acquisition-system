@@ -4,7 +4,7 @@ import type {
   RegisterRequest,
   User,
 } from '../types/auth';
-import type { UserRolesResponse } from '../types/rbac';
+import type { Role, UserRolesResponse } from '../types/rbac';
 import type {
   CreateManagedUserRequest,
   ManagedUser,
@@ -26,6 +26,19 @@ import type {
   UpdateDepartmentStatusRequest,
   UpdateUserOrganizationRequest,
 } from '../types/organization';
+import type {
+  CreatePermissionRequest,
+  Permission,
+  PermissionListResponse,
+  RolePermissionAssignment,
+  RolePermissionAssignmentRequest,
+  UpdatePermissionRequest,
+  UpdatePermissionStatusRequest,
+} from '../types/permissions';
+import type {
+  AuditEvent,
+  AuditEventListResponse,
+} from '../types/audit';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api/v1';
@@ -115,6 +128,10 @@ export async function getCurrentUser(): Promise<User> {
 
 export async function getMyRoles(): Promise<UserRolesResponse> {
   return request<UserRolesResponse>('/rbac/me');
+}
+
+export async function listRoles(): Promise<Role[]> {
+  return request<Role[]>('/rbac/roles');
 }
 
 /* -------------------------------------------------------------------------- */
@@ -351,4 +368,194 @@ export async function updateAuthorityStatus(
     method: 'PATCH',
     body: JSON.stringify(payload),
   });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Permission Management                                                     */
+/* -------------------------------------------------------------------------- */
+
+export async function listPermissions(
+  params: {
+    search?: string;
+    resource?: string;
+    action?: string;
+    is_active?: boolean;
+    offset?: number;
+    limit?: number;
+  } = {},
+): Promise<PermissionListResponse> {
+  const searchParams = new URLSearchParams();
+
+  if (params.search) {
+    searchParams.set('search', params.search);
+  }
+
+  if (params.resource) {
+    searchParams.set('resource', params.resource);
+  }
+
+  if (params.action) {
+    searchParams.set('action', params.action);
+  }
+
+  if (params.is_active !== undefined) {
+    searchParams.set('is_active', String(params.is_active));
+  }
+
+  if (params.offset !== undefined) {
+    searchParams.set('offset', String(params.offset));
+  }
+
+  if (params.limit !== undefined) {
+    searchParams.set('limit', String(params.limit));
+  }
+
+  const query = searchParams.toString();
+
+  return request<PermissionListResponse>(
+    `/permissions${query ? `?${query}` : ''}`,
+  );
+}
+
+export async function getPermission(
+  permissionId: string,
+): Promise<Permission> {
+  return request<Permission>(`/permissions/${permissionId}`);
+}
+
+export async function createPermission(
+  payload: CreatePermissionRequest,
+): Promise<Permission> {
+  return request<Permission>('/permissions', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updatePermission(
+  permissionId: string,
+  payload: UpdatePermissionRequest,
+): Promise<Permission> {
+  return request<Permission>(`/permissions/${permissionId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updatePermissionStatus(
+  permissionId: string,
+  payload: UpdatePermissionStatusRequest,
+): Promise<Permission> {
+  return request<Permission>(`/permissions/${permissionId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listRolePermissions(
+  roleCode: string,
+): Promise<RolePermissionAssignment[]> {
+  return request<RolePermissionAssignment[]>(
+    `/permissions/roles/${encodeURIComponent(roleCode)}`,
+  );
+}
+
+export async function assignPermissionToRole(
+  roleCode: string,
+  payload: RolePermissionAssignmentRequest,
+): Promise<RolePermissionAssignment> {
+  return request<RolePermissionAssignment>(
+    `/permissions/roles/${encodeURIComponent(roleCode)}/assign`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export async function removePermissionFromRole(
+  roleCode: string,
+  permissionCode: string,
+): Promise<void> {
+  await request<void>(
+    `/permissions/roles/${encodeURIComponent(
+      roleCode,
+    )}/assign/${encodeURIComponent(permissionCode)}`,
+    {
+      method: 'DELETE',
+    },
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Audit & Activity History                                                  */
+/* -------------------------------------------------------------------------- */
+
+export async function listAuditEvents(
+  params: {
+    search?: string;
+    actor_user_id?: string;
+    action?: string;
+    entity_type?: string;
+    entity_id?: string;
+    result?: string;
+    start_at?: string;
+    end_at?: string;
+    offset?: number;
+    limit?: number;
+  } = {},
+): Promise<AuditEventListResponse> {
+  const searchParams = new URLSearchParams();
+
+  if (params.search) {
+    searchParams.set('search', params.search);
+  }
+
+  if (params.actor_user_id) {
+    searchParams.set('actor_user_id', params.actor_user_id);
+  }
+
+  if (params.action) {
+    searchParams.set('action', params.action);
+  }
+
+  if (params.entity_type) {
+    searchParams.set('entity_type', params.entity_type);
+  }
+
+  if (params.entity_id) {
+    searchParams.set('entity_id', params.entity_id);
+  }
+
+  if (params.result) {
+    searchParams.set('result', params.result);
+  }
+
+  if (params.start_at) {
+    searchParams.set('start_at', params.start_at);
+  }
+
+  if (params.end_at) {
+    searchParams.set('end_at', params.end_at);
+  }
+
+  if (params.offset !== undefined) {
+    searchParams.set('offset', String(params.offset));
+  }
+
+  if (params.limit !== undefined) {
+    searchParams.set('limit', String(params.limit));
+  }
+
+  const query = searchParams.toString();
+
+  return request<AuditEventListResponse>(
+    `/audit${query ? `?${query}` : ''}`,
+  );
+}
+
+export async function getAuditEvent(
+  eventId: string,
+): Promise<AuditEvent> {
+  return request<AuditEvent>(`/audit/${eventId}`);
 }

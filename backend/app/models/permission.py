@@ -7,10 +7,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
-class Role(Base):
-    """System role used for role-based access control."""
+class Permission(Base):
+    """System permission that can be granted to one or more roles."""
 
-    __tablename__ = "roles"
+    __tablename__ = "permissions"
 
     id: Mapped[UUID] = mapped_column(
         primary_key=True,
@@ -18,7 +18,7 @@ class Role(Base):
     )
 
     code: Mapped[str] = mapped_column(
-        String(80),
+        String(100),
         unique=True,
         index=True,
         nullable=False,
@@ -29,8 +29,15 @@ class Role(Base):
         nullable=False,
     )
 
-    scope_level: Mapped[str] = mapped_column(
-        String(30),
+    resource: Mapped[str] = mapped_column(
+        String(80),
+        index=True,
+        nullable=False,
+    )
+
+    action: Mapped[str] = mapped_column(
+        String(80),
+        index=True,
         nullable=False,
     )
 
@@ -39,7 +46,7 @@ class Role(Base):
         nullable=True,
     )
 
-    is_system_role: Mapped[bool] = mapped_column(
+    is_system_permission: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=True,
@@ -66,11 +73,7 @@ class Role(Base):
         onupdate=func.now(),
     )
 
-    user_assignments: Mapped[list["UserRole"]] = relationship(
-        back_populates="role",
-    )
-
-    permission_assignments: Mapped[list["RolePermission"]] = relationship(
-        back_populates="role",
+    role_assignments: Mapped[list["RolePermission"]] = relationship(
+        back_populates="permission",
         cascade="all, delete-orphan",
     )

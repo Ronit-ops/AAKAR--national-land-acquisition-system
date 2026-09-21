@@ -22,10 +22,19 @@ import type {
 } from './types/users';
 import DepartmentManagementWorkspace from './components/DepartmentManagementWorkspace';
 import AuthorityManagementWorkspace from './components/AuthorityManagementWorkspace';
+import PermissionManagementWorkspace from './components/PermissionManagementWorkspace';
+import AuditHistoryWorkspace from './components/AuditHistoryWorkspace';
 import './App.css';
 
 type AuthMode = 'login' | 'register';
-type WorkspaceMode = 'overview' | 'users' | 'departments' | 'authorities';
+
+type WorkspaceMode =
+  | 'overview'
+  | 'users'
+  | 'departments'
+  | 'authorities'
+  | 'permissions'
+  | 'audit';
 
 function formatScopeLevel(scopeLevel: string): string {
   return scopeLevel
@@ -128,7 +137,6 @@ function App() {
     };
   }, [user]);
 
-
   const handleSignOut = () => {
     clearAccessToken();
     setRoles([]);
@@ -199,6 +207,30 @@ function App() {
                 >
                   Authority Management
                 </button>
+
+                <button
+                  type="button"
+                  className={
+                    workspace === 'permissions'
+                      ? 'workspace-button workspace-button-active'
+                      : 'workspace-button'
+                  }
+                  onClick={() => setWorkspace('permissions')}
+                >
+                  Permission Management
+                </button>
+
+                <button
+                  type="button"
+                  className={
+                    workspace === 'audit'
+                      ? 'workspace-button workspace-button-active'
+                      : 'workspace-button'
+                  }
+                  onClick={() => setWorkspace('audit')}
+                >
+                  Audit & Activity History
+                </button>
               </>
             )}
 
@@ -218,6 +250,10 @@ function App() {
           <DepartmentManagementWorkspace />
         ) : workspace === 'authorities' && isSystemAdministrator ? (
           <AuthorityManagementWorkspace />
+        ) : workspace === 'permissions' && isSystemAdministrator ? (
+          <PermissionManagementWorkspace />
+        ) : workspace === 'audit' ? (
+          <AuditHistoryWorkspace />
         ) : (
           <section className="session-card">
             <div className="status-badge">
@@ -407,9 +443,9 @@ function UserManagementWorkspace({
     useState<ManagedUserDetail | null>(null);
 
   const [search, setSearch] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>(
-    'all',
-  );
+  const [activeFilter, setActiveFilter] = useState<
+    'all' | 'active' | 'inactive'
+  >('all');
 
   const [offset, setOffset] = useState(0);
   const limit = 25;
@@ -887,7 +923,9 @@ function UserManagementWorkspace({
               disabled={
                 offset + limit >= total || loadingUsers || total === 0
               }
-              onClick={() => setOffset((currentOffset) => currentOffset + limit)}
+              onClick={() =>
+                setOffset((currentOffset) => currentOffset + limit)
+              }
             >
               Next
             </button>
@@ -965,7 +1003,6 @@ function UserDetailPanel({
 }: UserDetailPanelProps) {
   const [fullName, setFullName] = useState(user.full_name);
   const [email, setEmail] = useState(user.email);
-
 
   return (
     <div className="detail-card">
@@ -1124,6 +1161,7 @@ function UserDetailPanel({
             ))}
           </div>
         )}
+
       </section>
 
       {isCurrentUser && (

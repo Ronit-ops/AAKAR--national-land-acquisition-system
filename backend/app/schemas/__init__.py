@@ -18,6 +18,15 @@ from app.schemas.departments import (
     UpdateDepartmentRequest,
     UpdateDepartmentStatusRequest,
 )
+from app.schemas.permissions import (
+    CreatePermissionRequest,
+    PermissionListResponse,
+    PermissionResponse,
+    RolePermissionAssignmentRequest,
+    RolePermissionAssignmentResponse,
+    UpdatePermissionRequest,
+    UpdatePermissionStatusRequest,
+)
 from app.schemas.rbac import (
     RoleAssignmentRequest,
     RoleAssignmentResponse,
@@ -58,4 +67,11 @@ __all__ = [
     "DepartmentResponse",
     "UpdateDepartmentRequest",
     "UpdateDepartmentStatusRequest",
+    "PermissionResponse",
+    "PermissionListResponse",
+    "CreatePermissionRequest",
+    "UpdatePermissionRequest",
+    "UpdatePermissionStatusRequest",
+    "RolePermissionAssignmentRequest",
+    "RolePermissionAssignmentResponse",
 ]
