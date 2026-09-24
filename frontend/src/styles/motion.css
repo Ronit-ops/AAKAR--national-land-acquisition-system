@@ -1,0 +1,1211 @@
+/* =========================================================
+   AAKAR
+   National Land Acquisition & Management System
+
+   MOTION SYSTEM
+   Application-specific motion foundation
+   ========================================================= */
+
+
+/* =========================================================
+   MOTION TOKENS
+   ========================================================= */
+
+:root {
+  --aakar-motion-fast: 140ms;
+  --aakar-motion-standard: 220ms;
+  --aakar-motion-smooth: 360ms;
+  --aakar-motion-slow: 520ms;
+
+  --aakar-motion-ease:
+    cubic-bezier(0.22, 1, 0.36, 1);
+
+  --aakar-motion-ease-soft:
+    cubic-bezier(0.25, 0.8, 0.25, 1);
+
+  --aakar-motion-ease-enter:
+    cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+
+/* =========================================================
+   GLOBAL
+   ========================================================= */
+
+html {
+  scroll-behavior: smooth;
+}
+
+
+/* =========================================================
+   AUTHENTICATION SCREEN
+   ========================================================= */
+
+.auth-shell {
+  animation:
+    aakar-auth-shell-enter
+    520ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-auth-shell-enter {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+
+/* =========================================================
+   AUTH VISUAL PANEL
+   ========================================================= */
+
+.auth-visual {
+  animation:
+    aakar-auth-visual-enter
+    700ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-auth-visual-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+
+/* =========================================================
+   AUTH BRAND
+   ========================================================= */
+
+.auth-visual .brand {
+  animation:
+    aakar-auth-brand-enter
+    500ms
+    100ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-auth-brand-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================================
+   AUTH VISUAL CONTENT
+   ========================================================= */
+
+.visual-content {
+  animation:
+    aakar-visual-content-enter
+    600ms
+    180ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-visual-content-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================================
+   AUTH CONTOUR LINES
+   ========================================================= */
+
+.contour {
+  transform-origin: center;
+  animation:
+    aakar-contour-enter
+    1200ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+.contour-one {
+  animation-delay: 100ms;
+}
+
+.contour-two {
+  animation-delay: 180ms;
+}
+
+.contour-three {
+  animation-delay: 260ms;
+}
+
+@keyframes aakar-contour-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+
+/* =========================================================
+   AUTH FOOTER
+   ========================================================= */
+
+.visual-footer {
+  animation:
+    aakar-footer-enter
+    500ms
+    500ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-footer-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================================
+   AUTH PANEL
+   ========================================================= */
+
+.auth-panel {
+  animation:
+    aakar-auth-panel-enter
+    650ms
+    80ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-auth-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+
+/* =========================================================
+   AUTH CARD
+   ========================================================= */
+
+.auth-card {
+  animation:
+    aakar-auth-card-enter
+    560ms
+    180ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-auth-card-enter {
+  from {
+    opacity: 0;
+    transform:
+      translateY(18px)
+      scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+
+/* =========================================================
+   AUTH HEADING
+   ========================================================= */
+
+.auth-heading {
+  animation:
+    aakar-auth-heading-enter
+    460ms
+    300ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-auth-heading-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================================
+   AUTH FORM
+   ========================================================= */
+
+.auth-form {
+  animation:
+    aakar-auth-form-enter
+    460ms
+    380ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-auth-form-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================================
+   AUTH FORM INPUTS
+   ========================================================= */
+
+.auth-form input {
+  transition:
+    border-color var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft),
+    background-color var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft),
+    box-shadow var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft),
+    transform var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft);
+}
+
+.auth-form input:hover {
+  transform: translateY(-1px);
+}
+
+.auth-form input:focus {
+  transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   BUTTON FOUNDATION
+   ========================================================= */
+
+.primary-button,
+.secondary-button,
+.ghost-button,
+.back-button {
+  transition:
+    background-color var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft),
+    border-color var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft),
+    color var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft),
+    box-shadow var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft),
+    transform var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft);
+}
+
+.primary-button:hover,
+.secondary-button:hover,
+.ghost-button:hover,
+.back-button:hover {
+  transform: translateY(-1px);
+}
+
+.primary-button:active,
+.secondary-button:active,
+.ghost-button:active,
+.back-button:active {
+  transform: translateY(0) scale(0.985);
+}
+
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.ghost-button:focus-visible,
+.back-button:focus-visible {
+  outline: 2px solid rgba(54, 147, 111, 0.45);
+  outline-offset: 3px;
+}
+
+
+/* =========================================================
+   SIGN-IN BUTTON
+   ========================================================= */
+
+.auth-form .primary-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-form .primary-button::after {
+  content: "";
+
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -75%;
+
+  width: 45%;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.18),
+      transparent
+    );
+
+  transform: skewX(-18deg);
+
+  transition:
+    left 520ms var(--aakar-motion-ease);
+
+  pointer-events: none;
+}
+
+.auth-form .primary-button:hover::after {
+  left: 135%;
+}
+
+
+/* =========================================================
+   AUTH SWITCH
+   ========================================================= */
+
+.auth-switch {
+  animation:
+    aakar-auth-switch-enter
+    420ms
+    520ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-auth-switch-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================================
+   MOBILE BRAND
+   ========================================================= */
+
+.mobile-brand {
+  animation:
+    aakar-mobile-brand-enter
+    420ms
+    120ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-mobile-brand-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================================
+   APPLICATION SHELL
+   ========================================================= */
+
+.app-shell {
+  animation:
+    aakar-app-shell-enter
+    420ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-app-shell-enter {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+
+/* =========================================================
+   APPLICATION HEADER
+   ========================================================= */
+
+.app-header {
+  animation:
+    aakar-header-enter
+    460ms
+    60ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-header-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================================
+   HEADER BRAND
+   ========================================================= */
+
+.app-header .brand {
+  animation:
+    aakar-header-brand-enter
+    420ms
+    120ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-header-brand-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+
+/* =========================================================
+   HEADER NAVIGATION
+   ========================================================= */
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.workspace-button {
+  position: relative;
+  overflow: hidden;
+
+  transition:
+    background-color var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft),
+    border-color var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft),
+    color var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft),
+    box-shadow var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft),
+    transform var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft);
+}
+
+.workspace-button::after {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      105deg,
+      transparent 20%,
+      rgba(255, 255, 255, 0.22) 48%,
+      transparent 76%
+    );
+
+  transform: translateX(-130%);
+
+  transition:
+    transform 520ms var(--aakar-motion-ease);
+
+  pointer-events: none;
+}
+
+.workspace-button:hover::after {
+  transform: translateX(130%);
+}
+
+.workspace-button:hover {
+  transform: translateY(-2px);
+}
+
+.workspace-button:active {
+  transform: translateY(0) scale(0.985);
+}
+
+.workspace-button-active {
+  animation:
+    aakar-workspace-active
+    280ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-workspace-active {
+  from {
+    opacity: 0.7;
+    transform: translateY(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================================
+   HEADER BUTTON STAGGER
+   ========================================================= */
+
+.header-actions .workspace-button:nth-child(1) {
+  animation:
+    aakar-nav-button-enter
+    420ms
+    160ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+.header-actions .workspace-button:nth-child(2) {
+  animation:
+    aakar-nav-button-enter
+    420ms
+    200ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+.header-actions .workspace-button:nth-child(3) {
+  animation:
+    aakar-nav-button-enter
+    420ms
+    240ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+.header-actions .workspace-button:nth-child(4) {
+  animation:
+    aakar-nav-button-enter
+    420ms
+    280ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+.header-actions .workspace-button:nth-child(5) {
+  animation:
+    aakar-nav-button-enter
+    420ms
+    320ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+.header-actions .workspace-button:nth-child(6) {
+  animation:
+    aakar-nav-button-enter
+    420ms
+    360ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-nav-button-enter {
+  from {
+    opacity: 0;
+    transform:
+      translateY(-8px)
+      scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+
+/* =========================================================
+   SIGN OUT BUTTON
+   ========================================================= */
+
+.header-actions .ghost-button {
+  animation:
+    aakar-signout-enter
+    420ms
+    400ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-signout-enter {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+
+/* =========================================================
+   SESSION CONTENT
+   ========================================================= */
+
+.session-card {
+  animation:
+    aakar-session-card-enter
+    560ms
+    120ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-session-card-enter {
+  from {
+    opacity: 0;
+    transform:
+      translateY(18px)
+      scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+
+/* =========================================================
+   SESSION STATUS
+   ========================================================= */
+
+.status-badge {
+  animation:
+    aakar-status-enter
+    400ms
+    260ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+.status-dot {
+  animation:
+    aakar-status-pulse
+    2.8s
+    ease-in-out
+    infinite;
+}
+
+@keyframes aakar-status-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes aakar-status-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px rgba(97, 185, 141, 0.07);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 7px rgba(97, 185, 141, 0.015);
+  }
+}
+
+
+/* =========================================================
+   PROFILE GRID
+   ========================================================= */
+
+.profile-grid {
+  animation:
+    aakar-profile-grid-enter
+    500ms
+    260ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-profile-grid-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.profile-item {
+  transition:
+    border-color var(--aakar-motion-standard)
+      var(--aakar-motion-ease-soft),
+    background-color var(--aakar-motion-standard)
+      var(--aakar-motion-ease-soft),
+    box-shadow var(--aakar-motion-standard)
+      var(--aakar-motion-ease-soft),
+    transform var(--aakar-motion-standard)
+      var(--aakar-motion-ease-soft);
+}
+
+.profile-item:hover {
+  transform: translateY(-2px);
+}
+
+
+/* =========================================================
+   ROLES SECTION
+   ========================================================= */
+
+.roles-section {
+  animation:
+    aakar-roles-section-enter
+    500ms
+    340ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-roles-section-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================================
+   ROLE CARDS
+   ========================================================= */
+
+.role-card {
+  transition:
+    border-color var(--aakar-motion-standard)
+      var(--aakar-motion-ease-soft),
+    box-shadow var(--aakar-motion-standard)
+      var(--aakar-motion-ease-soft),
+    transform var(--aakar-motion-standard)
+      var(--aakar-motion-ease-soft),
+    background-color var(--aakar-motion-standard)
+      var(--aakar-motion-ease-soft);
+}
+
+.role-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 10px 28px rgba(16, 29, 42, 0.07);
+}
+
+.role-list .role-card:nth-child(1) {
+  animation:
+    aakar-role-card-enter
+    460ms
+    400ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+.role-list .role-card:nth-child(2) {
+  animation:
+    aakar-role-card-enter
+    460ms
+    460ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+.role-list .role-card:nth-child(3) {
+  animation:
+    aakar-role-card-enter
+    460ms
+    520ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-role-card-enter {
+  from {
+    opacity: 0;
+    transform:
+      translateY(10px)
+      scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+
+/* =========================================================
+   AUTHORIZATION NOTE
+   ========================================================= */
+
+.authorization-note {
+  animation:
+    aakar-note-enter
+    420ms
+    520ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-note-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================================
+   MANAGEMENT WORKSPACES
+   ========================================================= */
+
+.management-shell {
+  animation:
+    aakar-management-enter
+    500ms
+    80ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-management-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================================
+   MANAGEMENT HEADING
+   ========================================================= */
+
+.management-heading {
+  animation:
+    aakar-management-heading-enter
+    440ms
+    140ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-management-heading-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================================
+   MANAGEMENT CARDS
+   ========================================================= */
+
+.management-form-card,
+.users-panel,
+.user-detail-panel,
+.detail-card {
+  transition:
+    border-color var(--aakar-motion-standard)
+      var(--aakar-motion-ease-soft),
+    box-shadow var(--aakar-motion-standard)
+      var(--aakar-motion-ease-soft);
+}
+
+
+/* =========================================================
+   USER LIST
+   ========================================================= */
+
+.user-list-item {
+  transition:
+    background-color var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft),
+    border-color var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft),
+    transform var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft),
+    box-shadow var(--aakar-motion-fast)
+      var(--aakar-motion-ease-soft);
+}
+
+.user-list-item:hover {
+  transform: translateX(3px);
+}
+
+.user-list-item:active {
+  transform: translateX(2px) scale(0.995);
+}
+
+
+/* =========================================================
+   DETAIL CARD
+   ========================================================= */
+
+.detail-card {
+  animation:
+    aakar-detail-card-enter
+    460ms
+    100ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-detail-card-enter {
+  from {
+    opacity: 0;
+    transform:
+      translateY(10px)
+      scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+
+/* =========================================================
+   ERROR / SUCCESS MESSAGES
+   ========================================================= */
+
+.error-message,
+.success-message {
+  animation:
+    aakar-message-enter
+    300ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+@keyframes aakar-message-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* =========================================================
+   LOADING SCREEN
+   ========================================================= */
+
+.loading-screen {
+  animation:
+    aakar-loading-enter
+    360ms
+    var(--aakar-motion-ease-enter)
+    both;
+}
+
+.loading-screen .brand-mark {
+  animation:
+    aakar-loading-mark
+    1.8s
+    ease-in-out
+    infinite;
+}
+
+@keyframes aakar-loading-enter {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes aakar-loading-mark {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+
+/* =========================================================
+   DISABLED STATES
+   ========================================================= */
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+button:disabled:hover {
+  transform: none;
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .auth-shell *,
+  .auth-shell *::before,
+  .auth-shell *::after,
+  .app-shell *,
+  .app-shell *::before,
+  .app-shell *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+
+    transition-duration: 0.01ms !important;
+
+    scroll-behavior: auto !important;
+  }
+}
+
+
+/* =========================================================
+   SAFETY: NO MOTION WHEN ELEMENT IS NOT INTERACTIVE
+   ========================================================= */
+
+@media (hover: none) {
+  .profile-item:hover,
+  .role-card:hover,
+  .user-list-item:hover,
+  .workspace-button:hover,
+  .primary-button:hover,
+  .secondary-button:hover,
+  .ghost-button:hover {
+    transform: none;
+  }
+}

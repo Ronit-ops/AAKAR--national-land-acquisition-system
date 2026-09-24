@@ -16,10 +16,12 @@ from app.schemas.rbac import (
     RoleAssignmentRequest,
     RoleAssignmentResponse,
     RoleResponse,
+    UserPermissionsResponse,
     UserRolesResponse,
 )
 from app.services.rbac_service import (
     assign_role,
+    get_user_permission_codes,
     get_user_roles,
     remove_role,
 )
@@ -54,6 +56,25 @@ def get_my_roles(
     return UserRolesResponse(
         user_id=current_user.id,
         roles=roles,
+    )
+
+
+@router.get(
+    "/me/permissions",
+    response_model=UserPermissionsResponse,
+)
+def get_my_permissions(
+    current_user: CurrentUser,
+    db: Session = Depends(get_db),
+):
+    permission_codes = get_user_permission_codes(
+        db=db,
+        user_id=current_user.id,
+    )
+
+    return UserPermissionsResponse(
+        user_id=current_user.id,
+        permissions=sorted(permission_codes),
     )
 
 

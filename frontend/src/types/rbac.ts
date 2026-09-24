@@ -14,3 +14,17 @@ export interface UserRolesResponse {
   user_id: string;
   roles: Role[];
 }
+
+export interface UserPermissionsResponse {
+  user_id: string;
+  permissions: string[];
+}
+
+export interface RoleAssignmentRequest {
+  role_code: string;
+}
+
+export interface RoleAssignmentResponse {
+  user_id: string;
+  role: Role;
+}

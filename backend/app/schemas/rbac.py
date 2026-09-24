@@ -23,6 +23,11 @@ class UserRolesResponse(BaseModel):
     roles: list[RoleResponse]
 
 
+class UserPermissionsResponse(BaseModel):
+    user_id: UUID
+    permissions: list[str]
+
+
 class RoleAssignmentRequest(BaseModel):
     role_code: str = Field(
         min_length=1,

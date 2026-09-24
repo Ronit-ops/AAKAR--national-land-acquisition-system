@@ -2,11 +2,9 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_role
-from app.db.session import get_db
+from app.api.deps import get_db, require_permission, require_role
 from app.models.user import User
 from app.schemas.authorities import (
     AuthorityListResponse,
@@ -15,7 +13,6 @@ from app.schemas.authorities import (
     UpdateAuthorityRequest,
     UpdateAuthorityStatusRequest,
 )
-from app.services.audit_service import record_audit_event
 from app.services.authority_service import (
     create_authority,
     get_authority,
@@ -27,7 +24,7 @@ from app.services.authority_service import (
 
 router = APIRouter(
     prefix="/authorities",
-    tags=["Authority Management"],
+    tags=["Authorities"],
 )
 
 
@@ -37,50 +34,57 @@ SystemAdministrator = Annotated[
 ]
 
 
+AuthorityReader = Annotated[
+    User,
+    Depends(require_permission("authority.read")),
+]
+
+
 @router.get(
     "",
     response_model=AuthorityListResponse,
+    status_code=status.HTTP_200_OK,
 )
 def list_managed_authorities(
-    current_user: SystemAdministrator,
     db: Session = Depends(get_db),
+    current_user: AuthorityReader = None,
     search: str | None = Query(
         default=None,
-        max_length=150,
+        description="Search authorities by code or name.",
     ),
-    department_id: UUID | None = Query(default=None),
+    department_id: UUID | None = Query(
+        default=None,
+        description="Filter authorities by department.",
+    ),
     authority_type: str | None = Query(
         default=None,
-        max_length=20,
+        description="Filter authorities by authority type.",
     ),
-    is_active: bool | None = Query(default=None),
+    is_active: bool | None = Query(
+        default=None,
+        description="Filter authorities by active status.",
+    ),
     offset: int = Query(
         default=0,
         ge=0,
+        description="Number of records to skip.",
     ),
     limit: int = Query(
         default=50,
         ge=1,
         le=100,
+        description="Maximum number of records to return.",
     ),
-) -> AuthorityListResponse:
-    del current_user
-
-    try:
-        authorities, total = list_authorities(
-            db=db,
-            search=search,
-            department_id=department_id,
-            authority_type=authority_type,
-            is_active=is_active,
-            offset=offset,
-            limit=limit,
-        )
-    except ValueError as error:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(error),
-        ) from None
+):
+    authorities, total = list_authorities(
+        db=db,
+        search=search,
+        department_id=department_id,
+        authority_type=authority_type,
+        is_active=is_active,
+        offset=offset,
+        limit=limit,
+    )
 
     return AuthorityListResponse(
         items=authorities,
@@ -93,14 +97,13 @@ def list_managed_authorities(
 @router.get(
     "/{authority_id}",
     response_model=AuthorityResponse,
+    status_code=status.HTTP_200_OK,
 )
 def get_managed_authority(
     authority_id: UUID,
-    current_user: SystemAdministrator,
     db: Session = Depends(get_db),
-) -> AuthorityResponse:
-    del current_user
-
+    current_user: AuthorityReader = None,
+):
     authority = get_authority(
         db=db,
         authority_id=authority_id,
@@ -112,7 +115,7 @@ def get_managed_authority(
             detail="Authority not found.",
         )
 
-    return AuthorityResponse.model_validate(authority)
+    return authority
 
 
 @router.post(
@@ -122,89 +125,38 @@ def get_managed_authority(
 )
 def create_managed_authority(
     payload: CreateAuthorityRequest,
-    current_user: SystemAdministrator,
     db: Session = Depends(get_db),
-) -> AuthorityResponse:
+    current_user: SystemAdministrator = None,
+):
     try:
-        authority = create_authority(
+        return create_authority(
             db=db,
             department_id=payload.department_id,
             code=payload.code,
             name=payload.name,
             authority_type=payload.authority_type,
             description=payload.description,
-            commit=False,
         )
-
-        record_audit_event(
-            db=db,
-            actor_user_id=current_user.id,
-            action="authority_created",
-            entity_type="authority",
-            entity_id=authority.id,
-            details={
-                "department_id": str(authority.department_id),
-                "code": authority.code,
-                "name": authority.name,
-                "authority_type": authority.authority_type,
-            },
-            commit=False,
-        )
-
-        db.commit()
-        db.refresh(authority)
-
-    except ValueError as error:
-        db.rollback()
-
-        message = str(error)
-
-        if message == "Department not found.":
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=message,
-            ) from None
-
-        if message == "Cannot create an authority under an inactive department.":
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=message,
-            ) from None
-
-        if message == "An authority with this code already exists.":
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=message,
-            ) from None
-
+    except ValueError as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=message,
-        ) from None
-
-    except SQLAlchemyError:
-        db.rollback()
-
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unable to create the authority.",
-        ) from None
-
-    return AuthorityResponse.model_validate(authority)
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
 
 
 @router.patch(
     "/{authority_id}",
     response_model=AuthorityResponse,
+    status_code=status.HTTP_200_OK,
 )
 def update_managed_authority(
     authority_id: UUID,
     payload: UpdateAuthorityRequest,
-    current_user: SystemAdministrator,
     db: Session = Depends(get_db),
-) -> AuthorityResponse:
+    current_user: SystemAdministrator = None,
+):
     try:
-        authority = update_authority(
+        return update_authority(
             db=db,
             authority_id=authority_id,
             department_id=payload.department_id,
@@ -212,112 +164,45 @@ def update_managed_authority(
             name=payload.name,
             authority_type=payload.authority_type,
             description=payload.description,
-            commit=False,
         )
-    except ValueError as error:
-        message = str(error)
-
-        if message in {
-            "Authority not found.",
-            "Department not found.",
-        }:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=message,
-            ) from None
-
-        if message in {
-            "Cannot assign an authority to an inactive department.",
-            "An authority with this code already exists.",
-        }:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=message,
-            ) from None
-
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=message,
-        ) from None
-
-    try:
-        record_audit_event(
-            db=db,
-            actor_user_id=current_user.id,
-            action="authority_updated",
-            entity_type="authority",
-            entity_id=authority.id,
-            details={
-                "fields": [
-                    "department_id",
-                    "code",
-                    "name",
-                    "authority_type",
-                    "description",
-                ],
-            },
-            commit=False,
+    except ValueError as exc:
+        status_code = (
+            status.HTTP_404_NOT_FOUND
+            if str(exc) == "Authority not found."
+            else status.HTTP_400_BAD_REQUEST
         )
 
-        db.commit()
-        db.refresh(authority)
-
-    except SQLAlchemyError:
-        db.rollback()
-
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unable to update the authority.",
-        ) from None
-
-    return AuthorityResponse.model_validate(authority)
+            status_code=status_code,
+            detail=str(exc),
+        ) from exc
 
 
 @router.patch(
     "/{authority_id}/status",
     response_model=AuthorityResponse,
+    status_code=status.HTTP_200_OK,
 )
 def update_managed_authority_status(
     authority_id: UUID,
     payload: UpdateAuthorityStatusRequest,
-    current_user: SystemAdministrator,
     db: Session = Depends(get_db),
-) -> AuthorityResponse:
+    current_user: SystemAdministrator = None,
+):
     try:
-        authority = set_authority_active_status(
+        return set_authority_active_status(
             db=db,
             authority_id=authority_id,
             is_active=payload.is_active,
-            commit=False,
         )
-    except ValueError as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        ) from None
-
-    try:
-        record_audit_event(
-            db=db,
-            actor_user_id=current_user.id,
-            action="authority_status_changed",
-            entity_type="authority",
-            entity_id=authority.id,
-            details={
-                "is_active": authority.is_active,
-            },
-            commit=False,
+    except ValueError as exc:
+        status_code = (
+            status.HTTP_404_NOT_FOUND
+            if str(exc) == "Authority not found."
+            else status.HTTP_400_BAD_REQUEST
         )
 
-        db.commit()
-        db.refresh(authority)
-
-    except SQLAlchemyError:
-        db.rollback()
-
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unable to change the authority status.",
-        ) from None
-
-    return AuthorityResponse.model_validate(authority)
+            status_code=status_code,
+            detail=str(exc),
+        ) from exc

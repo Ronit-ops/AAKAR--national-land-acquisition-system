@@ -4,7 +4,15 @@ import type {
   RegisterRequest,
   User,
 } from '../types/auth';
-import type { Role, UserRolesResponse } from '../types/rbac';
+
+import type {
+  Role,
+  RoleAssignmentRequest,
+  RoleAssignmentResponse,
+  UserPermissionsResponse,
+  UserRolesResponse,
+} from '../types/rbac';
+
 import type {
   CreateManagedUserRequest,
   ManagedUser,
@@ -13,6 +21,7 @@ import type {
   UpdateUserStatusRequest,
   UserListResponse,
 } from '../types/users';
+
 import type {
   Authority,
   AuthorityListResponse,
@@ -26,6 +35,7 @@ import type {
   UpdateDepartmentStatusRequest,
   UpdateUserOrganizationRequest,
 } from '../types/organization';
+
 import type {
   CreatePermissionRequest,
   Permission,
@@ -35,27 +45,51 @@ import type {
   UpdatePermissionRequest,
   UpdatePermissionStatusRequest,
 } from '../types/permissions';
+
 import type {
   AuditEvent,
   AuditEventListResponse,
 } from '../types/audit';
 
+import type {
+  CreateProjectRequest,
+  Project,
+  ProjectListResponse,
+  ProjectStatusResponse,
+  UpdateProjectRequest,
+} from '../types/projects';
+
+import type {
+  CreateLandRequirementRequest,
+  LandRequirement,
+  LandRequirementActionRequest,
+  LandRequirementListResponse,
+  LandRequirementStatusResponse,
+  UpdateLandRequirementRequest,
+} from '../types/landRequirements';
+
+
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api/v1';
+  import.meta.env.VITE_API_BASE_URL ??
+  'http://127.0.0.1:8000/api/v1';
 
 const ACCESS_TOKEN_KEY = 'aakar_access_token';
+
 
 export function getAccessToken(): string | null {
   return sessionStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
+
 function setAccessToken(token: string): void {
   sessionStorage.setItem(ACCESS_TOKEN_KEY, token);
 }
 
+
 export function clearAccessToken(): void {
   sessionStorage.removeItem(ACCESS_TOKEN_KEY);
 }
+
 
 async function request<T>(
   path: string,
@@ -100,6 +134,7 @@ async function request<T>(
   return (await response.json()) as T;
 }
 
+
 export async function registerUser(
   payload: RegisterRequest,
 ): Promise<User> {
@@ -108,6 +143,7 @@ export async function registerUser(
     body: JSON.stringify(payload),
   });
 }
+
 
 export async function loginUser(
   payload: LoginRequest,
@@ -122,20 +158,56 @@ export async function loginUser(
   return response;
 }
 
+
 export async function getCurrentUser(): Promise<User> {
   return request<User>('/auth/me');
 }
+
 
 export async function getMyRoles(): Promise<UserRolesResponse> {
   return request<UserRolesResponse>('/rbac/me');
 }
 
+
+export async function getMyPermissions(): Promise<UserPermissionsResponse> {
+  return request<UserPermissionsResponse>('/rbac/me/permissions');
+}
+
+
 export async function listRoles(): Promise<Role[]> {
   return request<Role[]>('/rbac/roles');
 }
 
+
+export async function assignUserRole(
+  userId: string,
+  payload: RoleAssignmentRequest,
+): Promise<RoleAssignmentResponse> {
+  return request<RoleAssignmentResponse>(
+    `/rbac/users/${userId}/roles`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+
+export async function removeUserRole(
+  userId: string,
+  roleCode: string,
+): Promise<void> {
+  await request<void>(
+    `/rbac/users/${userId}/roles/${encodeURIComponent(roleCode)}`,
+    {
+      method: 'DELETE',
+    },
+  );
+}
+
+
 /* -------------------------------------------------------------------------- */
-/* User Management                                                           */
+/* User Management                                                            */
 /* -------------------------------------------------------------------------- */
 
 export async function listManagedUsers(
@@ -171,11 +243,13 @@ export async function listManagedUsers(
   );
 }
 
+
 export async function getManagedUser(
   userId: string,
 ): Promise<ManagedUserDetail> {
   return request<ManagedUserDetail>(`/users/${userId}`);
 }
+
 
 export async function createManagedUser(
   payload: CreateManagedUserRequest,
@@ -185,6 +259,7 @@ export async function createManagedUser(
     body: JSON.stringify(payload),
   });
 }
+
 
 export async function updateManagedUser(
   userId: string,
@@ -196,6 +271,7 @@ export async function updateManagedUser(
   });
 }
 
+
 export async function updateManagedUserStatus(
   userId: string,
   payload: UpdateUserStatusRequest,
@@ -205,6 +281,7 @@ export async function updateManagedUserStatus(
     body: JSON.stringify(payload),
   });
 }
+
 
 export async function updateManagedUserOrganization(
   userId: string,
@@ -216,8 +293,9 @@ export async function updateManagedUserOrganization(
   });
 }
 
+
 /* -------------------------------------------------------------------------- */
-/* Department Management                                                     */
+/* Department Management                                                      */
 /* -------------------------------------------------------------------------- */
 
 export async function listDepartments(
@@ -253,11 +331,13 @@ export async function listDepartments(
   );
 }
 
+
 export async function getDepartment(
   departmentId: string,
 ): Promise<Department> {
   return request<Department>(`/departments/${departmentId}`);
 }
+
 
 export async function createDepartment(
   payload: CreateDepartmentRequest,
@@ -267,6 +347,7 @@ export async function createDepartment(
     body: JSON.stringify(payload),
   });
 }
+
 
 export async function updateDepartment(
   departmentId: string,
@@ -278,6 +359,7 @@ export async function updateDepartment(
   });
 }
 
+
 export async function updateDepartmentStatus(
   departmentId: string,
   payload: UpdateDepartmentStatusRequest,
@@ -288,8 +370,9 @@ export async function updateDepartmentStatus(
   });
 }
 
+
 /* -------------------------------------------------------------------------- */
-/* Authority Management                                                      */
+/* Authority Management                                                       */
 /* -------------------------------------------------------------------------- */
 
 export async function listAuthorities(
@@ -335,11 +418,13 @@ export async function listAuthorities(
   );
 }
 
+
 export async function getAuthority(
   authorityId: string,
 ): Promise<Authority> {
   return request<Authority>(`/authorities/${authorityId}`);
 }
+
 
 export async function createAuthority(
   payload: CreateAuthorityRequest,
@@ -349,6 +434,7 @@ export async function createAuthority(
     body: JSON.stringify(payload),
   });
 }
+
 
 export async function updateAuthority(
   authorityId: string,
@@ -360,6 +446,7 @@ export async function updateAuthority(
   });
 }
 
+
 export async function updateAuthorityStatus(
   authorityId: string,
   payload: UpdateAuthorityStatusRequest,
@@ -370,8 +457,9 @@ export async function updateAuthorityStatus(
   });
 }
 
+
 /* -------------------------------------------------------------------------- */
-/* Permission Management                                                     */
+/* Permission Management                                                      */
 /* -------------------------------------------------------------------------- */
 
 export async function listPermissions(
@@ -417,11 +505,13 @@ export async function listPermissions(
   );
 }
 
+
 export async function getPermission(
   permissionId: string,
 ): Promise<Permission> {
   return request<Permission>(`/permissions/${permissionId}`);
 }
+
 
 export async function createPermission(
   payload: CreatePermissionRequest,
@@ -431,6 +521,7 @@ export async function createPermission(
     body: JSON.stringify(payload),
   });
 }
+
 
 export async function updatePermission(
   permissionId: string,
@@ -442,6 +533,7 @@ export async function updatePermission(
   });
 }
 
+
 export async function updatePermissionStatus(
   permissionId: string,
   payload: UpdatePermissionStatusRequest,
@@ -452,6 +544,7 @@ export async function updatePermissionStatus(
   });
 }
 
+
 export async function listRolePermissions(
   roleCode: string,
 ): Promise<RolePermissionAssignment[]> {
@@ -459,6 +552,7 @@ export async function listRolePermissions(
     `/permissions/roles/${encodeURIComponent(roleCode)}`,
   );
 }
+
 
 export async function assignPermissionToRole(
   roleCode: string,
@@ -473,6 +567,7 @@ export async function assignPermissionToRole(
   );
 }
 
+
 export async function removePermissionFromRole(
   roleCode: string,
   permissionCode: string,
@@ -486,6 +581,7 @@ export async function removePermissionFromRole(
     },
   );
 }
+
 
 /* -------------------------------------------------------------------------- */
 /* Audit & Activity History                                                  */
@@ -554,8 +650,222 @@ export async function listAuditEvents(
   );
 }
 
+
 export async function getAuditEvent(
   eventId: string,
 ): Promise<AuditEvent> {
   return request<AuditEvent>(`/audit/${eventId}`);
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* Project Management                                                        */
+/* -------------------------------------------------------------------------- */
+
+export async function listProjects(
+  params: {
+    search?: string;
+    offset?: number;
+    limit?: number;
+  } = {},
+): Promise<ProjectListResponse> {
+  const searchParams = new URLSearchParams();
+
+  if (params.search) {
+    searchParams.set('search', params.search);
+  }
+
+  if (params.offset !== undefined) {
+    searchParams.set('offset', String(params.offset));
+  }
+
+  if (params.limit !== undefined) {
+    searchParams.set('limit', String(params.limit));
+  }
+
+  const query = searchParams.toString();
+
+  return request<ProjectListResponse>(
+    `/projects${query ? `?${query}` : ''}`,
+  );
+}
+
+
+export async function getProject(
+  projectId: string,
+): Promise<Project> {
+  return request<Project>(`/projects/${projectId}`);
+}
+
+
+export async function createProject(
+  payload: CreateProjectRequest,
+): Promise<Project> {
+  return request<Project>('/projects', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+
+export async function updateProject(
+  projectId: string,
+  payload: UpdateProjectRequest,
+): Promise<Project> {
+  return request<Project>(`/projects/${projectId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+
+export async function activateProject(
+  projectId: string,
+): Promise<ProjectStatusResponse> {
+  return request<ProjectStatusResponse>(
+    `/projects/${projectId}/activate`,
+    {
+      method: 'POST',
+    },
+  );
+}
+
+
+export async function closeProject(
+  projectId: string,
+): Promise<ProjectStatusResponse> {
+  return request<ProjectStatusResponse>(
+    `/projects/${projectId}/close`,
+    {
+      method: 'POST',
+    },
+  );
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* Land Requirement Management                                                */
+/* -------------------------------------------------------------------------- */
+
+export async function listLandRequirements(
+  params: {
+    search?: string;
+    status?: string;
+    project_id?: string;
+    offset?: number;
+    limit?: number;
+  } = {},
+): Promise<LandRequirementListResponse> {
+  const searchParams = new URLSearchParams();
+
+  if (params.search) {
+    searchParams.set('search', params.search);
+  }
+
+  if (params.status) {
+    searchParams.set('status', params.status);
+  }
+
+  if (params.project_id) {
+    searchParams.set('project_id', params.project_id);
+  }
+
+  if (params.offset !== undefined) {
+    searchParams.set('offset', String(params.offset));
+  }
+
+  if (params.limit !== undefined) {
+    searchParams.set('limit', String(params.limit));
+  }
+
+  const query = searchParams.toString();
+
+  return request<LandRequirementListResponse>(
+    `/land-requirements${query ? `?${query}` : ''}`,
+  );
+}
+
+
+export async function getLandRequirement(
+  landRequirementId: string,
+): Promise<LandRequirement> {
+  return request<LandRequirement>(
+    `/land-requirements/${landRequirementId}`,
+  );
+}
+
+
+export async function createLandRequirement(
+  payload: CreateLandRequirementRequest,
+): Promise<LandRequirement> {
+  return request<LandRequirement>('/land-requirements', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+
+export async function updateLandRequirement(
+  landRequirementId: string,
+  payload: UpdateLandRequirementRequest,
+): Promise<LandRequirement> {
+  return request<LandRequirement>(
+    `/land-requirements/${landRequirementId}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+
+export async function submitLandRequirement(
+  landRequirementId: string,
+): Promise<LandRequirementStatusResponse> {
+  return request<LandRequirementStatusResponse>(
+    `/land-requirements/${landRequirementId}/submit`,
+    {
+      method: 'POST',
+    },
+  );
+}
+
+
+export async function approveLandRequirement(
+  landRequirementId: string,
+): Promise<LandRequirementStatusResponse> {
+  return request<LandRequirementStatusResponse>(
+    `/land-requirements/${landRequirementId}/approve`,
+    {
+      method: 'POST',
+    },
+  );
+}
+
+
+export async function rejectLandRequirement(
+  landRequirementId: string,
+  payload: LandRequirementActionRequest,
+): Promise<LandRequirementStatusResponse> {
+  return request<LandRequirementStatusResponse>(
+    `/land-requirements/${landRequirementId}/reject`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+
+export async function withdrawLandRequirement(
+  landRequirementId: string,
+  payload: LandRequirementActionRequest,
+): Promise<LandRequirementStatusResponse> {
+  return request<LandRequirementStatusResponse>(
+    `/land-requirements/${landRequirementId}/withdraw`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  );
 }

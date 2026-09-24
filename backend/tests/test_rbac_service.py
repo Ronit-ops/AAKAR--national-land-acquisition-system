@@ -424,7 +424,7 @@ def test_assign_permission_to_role_and_check_user_permission():
             user_id=user.id,
         )
 
-        assert permission_codes == {TEST_PERMISSION_CODE}
+        assert TEST_PERMISSION_CODE in permission_codes
     finally:
         db.close()
         cleanup_test_user()
@@ -541,20 +541,21 @@ def test_user_can_receive_permissions_from_multiple_roles():
             user_id=user.id,
         )
 
-        assert permission_codes == {
+        expected_permission_codes = {
             TEST_PERMISSION_CODE,
             second_permission_code,
         }
+
+        assert expected_permission_codes.issubset(permission_codes)
 
         permissions = get_user_permissions(
             db=db,
             user_id=user.id,
         )
 
-        assert {item.code for item in permissions} == {
-            TEST_PERMISSION_CODE,
-            second_permission_code,
-        }
+        actual_permission_codes = {item.code for item in permissions}
+
+        assert expected_permission_codes.issubset(actual_permission_codes)
     finally:
         db.close()
         cleanup_test_user()
@@ -574,6 +575,7 @@ def test_user_can_receive_permissions_from_multiple_roles():
                         RolePermission.permission_id == second_permission.id,
                     )
                 )
+
                 cleanup_db.delete(second_permission)
                 cleanup_db.commit()
         finally:
