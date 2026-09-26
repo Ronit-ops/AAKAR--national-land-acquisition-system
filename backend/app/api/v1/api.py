@@ -8,6 +8,7 @@ from app.api.v1.endpoints import (
     departments,
     health,
     land_requirements,
+    parcels,
     permissions,
     projects,
     rbac,
@@ -29,3 +30,4 @@ api_router.include_router(audit.router)
 api_router.include_router(projects.router)
 api_router.include_router(land_requirements.router)
 api_router.include_router(acquisition_cases.router)
+api_router.include_router(parcels.router)

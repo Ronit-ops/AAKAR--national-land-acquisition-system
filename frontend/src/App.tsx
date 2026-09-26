@@ -69,6 +69,7 @@ import AuditHistoryWorkspace from './components/AuditHistoryWorkspace';
 import ProjectManagementWorkspace from './components/ProjectManagementWorkspace';
 import LandRequirementWorkspace from './components/LandRequirementWorkspace';
 import AcquisitionCaseWorkspace from './components/AcquisitionCaseWorkspace';
+import ParcelManagementWorkspace from './components/ParcelManagementWorkspace';
 
 
 
@@ -95,6 +96,7 @@ type WorkspaceMode =
   | 'landRequirements'
 
   | 'acquisitionCases'
+  | 'parcels'
 
   | 'users'
 
@@ -218,6 +220,11 @@ const OPERATIONS_NAVIGATION: NavigationItem[] = [
 
     permission: 'acquisition_case.read',
 
+  },
+  {
+    workspace: 'parcels',
+    label: 'Parcel Management',
+    permission: 'parcel.read',
   },
 
 ];
@@ -819,6 +826,18 @@ function App() {
 
       return (
         <AcquisitionCaseWorkspace
+          permissions={permissionSet}
+        />
+      );
+    }
+
+    if (workspace === 'parcels') {
+      if (!hasPermission('parcel.read')) {
+        return null;
+      }
+
+      return (
+        <ParcelManagementWorkspace
           permissions={permissionSet}
         />
       );

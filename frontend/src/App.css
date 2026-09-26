@@ -798,6 +798,7 @@
 .management-form-grid input,
 .detail-form input,
 .search-field input,
+.filter-field input,
 .filter-field select {
   width: 100%;
   min-width: 0;
@@ -821,9 +822,18 @@
   color: #9ca69f;
 }
 
+.filter-field input::placeholder {
+  color: #9ca69f;
+}
+
+.filter-field input {
+  appearance: none;
+}
+
 .management-form-grid input:hover,
 .detail-form input:hover,
 .search-field input:hover,
+.filter-field input:hover,
 .filter-field select:hover {
   border-color: #bcc9be;
 }
@@ -831,6 +841,7 @@
 .management-form-grid input:focus,
 .detail-form input:focus,
 .search-field input:focus,
+.filter-field input:focus,
 .filter-field select:focus {
   border-color: #547150;
   box-shadow: 0 0 0 4px rgba(84, 113, 80, 0.09);
@@ -877,7 +888,7 @@
 
 .users-toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 155px;
+  grid-template-columns: minmax(0, 1fr) minmax(155px, 190px) minmax(155px, 190px);
   gap: 12px;
   padding-bottom: 17px;
   border-bottom: 1px solid #e2e8e2;
@@ -1194,6 +1205,10 @@
 @media (max-width: 1080px) {
   .management-layout {
     grid-template-columns: 1fr;
+  }
+
+  .users-toolbar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .user-detail-panel {

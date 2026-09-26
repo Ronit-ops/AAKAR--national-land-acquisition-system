@@ -81,6 +81,13 @@ import type {
   UpdateAcquisitionCaseRequest,
 } from '../types/acquisitionCases';
 
+import type {
+  CreateParcelRequest,
+  Parcel,
+  ParcelListResponse,
+  UpdateParcelRequest,
+} from '../types/parcels';
+
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ??
@@ -351,6 +358,7 @@ export async function updateManagedUserStatus(
     },
   );
 }
+
 
 /* -------------------------------------------------------------------------- */
 /* Department Management                                                      */
@@ -1305,5 +1313,132 @@ export async function listAcquisitionCaseStageHistory(
 ): Promise<AcquisitionCaseStageHistory[]> {
   return request<AcquisitionCaseStageHistory[]>(
     `/acquisition-cases/${acquisitionCaseId}/stage-history`,
+  );
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* Parcel & Land Management                                                   */
+/* -------------------------------------------------------------------------- */
+
+export async function listParcels(
+  params: {
+    search?: string;
+    state?: string;
+    district?: string;
+    taluka?: string;
+    village?: string;
+    survey_number?: string;
+    land_category?: string;
+    offset?: number;
+    limit?: number;
+  } = {},
+): Promise<ParcelListResponse> {
+  const searchParams = new URLSearchParams();
+
+  if (params.search) {
+    searchParams.set(
+      'search',
+      params.search,
+    );
+  }
+
+  if (params.state) {
+    searchParams.set(
+      'state',
+      params.state,
+    );
+  }
+
+  if (params.district) {
+    searchParams.set(
+      'district',
+      params.district,
+    );
+  }
+
+  if (params.taluka) {
+    searchParams.set(
+      'taluka',
+      params.taluka,
+    );
+  }
+
+  if (params.village) {
+    searchParams.set(
+      'village',
+      params.village,
+    );
+  }
+
+  if (params.survey_number) {
+    searchParams.set(
+      'survey_number',
+      params.survey_number,
+    );
+  }
+
+  if (params.land_category) {
+    searchParams.set(
+      'land_category',
+      params.land_category,
+    );
+  }
+
+  if (params.offset !== undefined) {
+    searchParams.set(
+      'offset',
+      String(params.offset),
+    );
+  }
+
+  if (params.limit !== undefined) {
+    searchParams.set(
+      'limit',
+      String(params.limit),
+    );
+  }
+
+  const query =
+    searchParams.toString();
+
+  return request<ParcelListResponse>(
+    `/parcels${query ? `?${query}` : ''}`,
+  );
+}
+
+
+export async function getParcel(
+  parcelId: string,
+): Promise<Parcel> {
+  return request<Parcel>(
+    `/parcels/${parcelId}`,
+  );
+}
+
+
+export async function createParcel(
+  payload: CreateParcelRequest,
+): Promise<Parcel> {
+  return request<Parcel>(
+    '/parcels',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+
+export async function updateParcel(
+  parcelId: string,
+  payload: UpdateParcelRequest,
+): Promise<Parcel> {
+  return request<Parcel>(
+    `/parcels/${parcelId}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    },
   );
 }
