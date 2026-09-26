@@ -134,16 +134,36 @@ def test_role_catalog_returns_active_roles():
 
         roles = response.json()
 
-        assert len(roles) == 20
-
         role_codes = {
             role["code"]
             for role in roles
         }
 
-        assert "national_administrator" in role_codes
-        assert "district_collector" in role_codes
-        assert "system_administrator" in role_codes
+        expected_role_codes = {
+            "aakar_development_admin",
+            "additional_collector",
+            "affected_family",
+            "audit_compliance",
+            "authorized_representative",
+            "central_ministry_officer",
+            "district_collector",
+            "field_verification_officer",
+            "infrastructure_officer",
+            "land_acquisition_officer",
+            "landowner_recorded_right_holder",
+            "national_administrator",
+            "national_monitoring_officer",
+            "project_director",
+            "revenue_officer",
+            "rr_officer",
+            "state_department_officer",
+            "state_land_authority_officer",
+            "state_nodal_officer",
+            "survey_gis_officer",
+            "system_administrator",
+        }
+
+        assert role_codes == expected_role_codes
     finally:
         delete_api_test_user(user.id)
 

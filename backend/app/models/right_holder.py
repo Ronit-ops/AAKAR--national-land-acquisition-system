@@ -8,6 +8,7 @@ from sqlalchemy import (
     Index,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -33,6 +34,11 @@ class RightHolder(Base):
     display_name: Mapped[str] = mapped_column(
         String(200),
         nullable=False,
+    )
+
+    source_system: Mapped[str | None] = mapped_column(
+        String(150),
+        nullable=True,
     )
 
     external_reference: Mapped[str | None] = mapped_column(
@@ -91,6 +97,11 @@ class RightHolder(Base):
             ")",
             name="ck_right_holders_holder_type",
         ),
+        UniqueConstraint(
+            "source_system",
+            "external_reference",
+            name="uq_right_holders_source_external_reference",
+        ),
         Index(
             "ix_right_holders_display_name",
             "display_name",
@@ -98,5 +109,9 @@ class RightHolder(Base):
         Index(
             "ix_right_holders_external_reference",
             "external_reference",
+        ),
+        Index(
+            "ix_right_holders_source_system",
+            "source_system",
         ),
     )

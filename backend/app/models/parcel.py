@@ -9,7 +9,6 @@ from sqlalchemy import (
     Index,
     Numeric,
     String,
-    Text,
     UniqueConstraint,
     func,
 )
@@ -121,6 +120,13 @@ class Parcel(Base):
     )
 
     interests: Mapped[list["ParcelInterest"]] = relationship(
+        back_populates="parcel",
+        cascade="all, delete-orphan",
+    )
+
+    land_record_retrievals: Mapped[
+        list["LandRecordRetrieval"]
+    ] = relationship(
         back_populates="parcel",
         cascade="all, delete-orphan",
     )

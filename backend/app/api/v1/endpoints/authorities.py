@@ -76,15 +76,21 @@ def list_managed_authorities(
         description="Maximum number of records to return.",
     ),
 ):
-    authorities, total = list_authorities(
-        db=db,
-        search=search,
-        department_id=department_id,
-        authority_type=authority_type,
-        is_active=is_active,
-        offset=offset,
-        limit=limit,
-    )
+    try:
+        authorities, total = list_authorities(
+            db=db,
+            search=search,
+            department_id=department_id,
+            authority_type=authority_type,
+            is_active=is_active,
+            offset=offset,
+            limit=limit,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
 
     return AuthorityListResponse(
         items=authorities,
@@ -138,9 +144,22 @@ def create_managed_authority(
             description=payload.description,
         )
     except ValueError as exc:
+        message = str(exc)
+
+        if message == "Department not found.":
+            status_code = status.HTTP_404_NOT_FOUND
+        elif message == "Cannot create an authority under an inactive department.":
+            status_code = status.HTTP_409_CONFLICT
+        elif message == "An authority with this code already exists.":
+            status_code = status.HTTP_409_CONFLICT
+        elif message == "Invalid authority type.":
+            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+        else:
+            status_code = status.HTTP_400_BAD_REQUEST
+
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
+            status_code=status_code,
+            detail=message,
         ) from exc
 
 
@@ -166,15 +185,26 @@ def update_managed_authority(
             description=payload.description,
         )
     except ValueError as exc:
-        status_code = (
-            status.HTTP_404_NOT_FOUND
-            if str(exc) == "Authority not found."
-            else status.HTTP_400_BAD_REQUEST
-        )
+        message = str(exc)
+
+        if message in {
+            "Authority not found.",
+            "Department not found.",
+        }:
+            status_code = status.HTTP_404_NOT_FOUND
+        elif message in {
+            "Cannot assign an authority to an inactive department.",
+            "An authority with this code already exists.",
+        }:
+            status_code = status.HTTP_409_CONFLICT
+        elif message == "Invalid authority type.":
+            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+        else:
+            status_code = status.HTTP_400_BAD_REQUEST
 
         raise HTTPException(
             status_code=status_code,
-            detail=str(exc),
+            detail=message,
         ) from exc
 
 
@@ -196,13 +226,14 @@ def update_managed_authority_status(
             is_active=payload.is_active,
         )
     except ValueError as exc:
-        status_code = (
-            status.HTTP_404_NOT_FOUND
-            if str(exc) == "Authority not found."
-            else status.HTTP_400_BAD_REQUEST
-        )
+        message = str(exc)
+
+        if message == "Authority not found.":
+            status_code = status.HTTP_404_NOT_FOUND
+        else:
+            status_code = status.HTTP_400_BAD_REQUEST
 
         raise HTTPException(
             status_code=status_code,
-            detail=str(exc),
+            detail=message,
         ) from exc
