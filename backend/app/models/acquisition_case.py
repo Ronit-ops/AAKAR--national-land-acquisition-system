@@ -6,6 +6,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -16,43 +17,69 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
-CASE_STAGES = (
-    "PROPOSAL",
-    "SCRUTINY",
-    "SIA",
-    "NOTIFICATION",
-    "SURVEY",
-    "OBJECTIONS",
-    "DECLARATION",
-    "CLAIMS_VERIFICATION",
-    "VALUATION",
-    "AWARD",
-    "COMPENSATION",
-    "R_AND_R",
-    "POSSESSION",
-    "HANDOVER",
-    "DISPUTE",
-    "CLOSURE",
+# ---------------------------------------------------------------------------
+# Controlled domain values
+# ---------------------------------------------------------------------------
+
+LEGAL_FRAMEWORKS = (
+    "RFCTLARR_2013",
+    "SPECIAL_CENTRAL_ACT",
+    "STATE_LAW",
+    "OTHER",
+)
+
+LEGAL_ROUTES = (
+    "RFCTLARR_STANDARD",
+    "RFCTLARR_URGENT",
+    "SPECIAL_ACT_ROUTE",
+    "STATE_SPECIFIC_ROUTE",
+    "NEGOTIATED_PURCHASE",
+)
+
+ACQUISITION_METHODS = (
+    "COMPULSORY_ACQUISITION",
+    "CONSENT_BASED",
+    "NEGOTIATED_PURCHASE",
 )
 
 CASE_STATUSES = (
     "DRAFT",
-    "IN_REVIEW",
-    "ACTION_REQUIRED",
-    "APPROVED",
-    "REJECTED",
-    "COMPLETED",
+    "ACTIVE",
+    "ON_HOLD",
+    "CANCELLED",
+    "CLOSED",
 )
 
-CASE_TYPES = (
-    "STATUTORY",
-    "NEGOTIATED",
-    "OTHER",
+CASE_STAGES = (
+    "INITIATION",
+    "SIA",
+    "PRELIMINARY_NOTIFICATION",
+    "OBJECTIONS_AND_HEARING",
+    "DECLARATION",
+    "R_AND_R",
+    "CLAIMS_AND_ENQUIRY",
+    "COMPENSATION_DETERMINATION",
+    "AWARD",
+    "COMPENSATION_AND_RR",
+    "POSSESSION",
+    "VESTING",
+    "HANDOVER",
 )
+
+
+# ---------------------------------------------------------------------------
+# Acquisition Case
+# ---------------------------------------------------------------------------
 
 
 class AcquisitionCase(Base):
-    """Central workflow container for a land acquisition process."""
+    """
+    Central workflow container for a land acquisition process.
+
+    This model intentionally contains only case-level workflow information.
+    Detailed statutory modules such as notifications, objections, valuation,
+    award, compensation, R&R, possession and handover are modeled separately.
+    """
 
     __tablename__ = "acquisition_cases"
 
@@ -61,6 +88,10 @@ class AcquisitionCase(Base):
         default=uuid4,
     )
 
+    # -----------------------------------------------------------------------
+    # Parent land requirement
+    # -----------------------------------------------------------------------
+
     land_requirement_id: Mapped[UUID] = mapped_column(
         ForeignKey(
             "land_requirements.id",
@@ -68,22 +99,41 @@ class AcquisitionCase(Base):
         nullable=False,
     )
 
+    # -----------------------------------------------------------------------
+    # Human-readable immutable case reference
+    # -----------------------------------------------------------------------
+
     case_number: Mapped[str] = mapped_column(
         String(80),
         nullable=False,
     )
 
-    case_type: Mapped[str] = mapped_column(
-        String(30),
+    # -----------------------------------------------------------------------
+    # Legal framework / route / acquisition method
+    # -----------------------------------------------------------------------
+
+    legal_framework: Mapped[str] = mapped_column(
+        String(40),
         nullable=False,
-        default="STATUTORY",
-        server_default="STATUTORY",
+        default="RFCTLARR_2013",
+        server_default="RFCTLARR_2013",
     )
 
     legal_route: Mapped[str | None] = mapped_column(
-        String(150),
+        String(50),
         nullable=True,
     )
+
+    acquisition_method: Mapped[str] = mapped_column(
+        String(40),
+        nullable=False,
+        default="COMPULSORY_ACQUISITION",
+        server_default="COMPULSORY_ACQUISITION",
+    )
+
+    # -----------------------------------------------------------------------
+    # Responsibility
+    # -----------------------------------------------------------------------
 
     responsible_authority_id: Mapped[UUID | None] = mapped_column(
         ForeignKey(
@@ -99,24 +149,40 @@ class AcquisitionCase(Base):
         nullable=True,
     )
 
+    # -----------------------------------------------------------------------
+    # Operational case status
+    # -----------------------------------------------------------------------
+
     status: Mapped[str] = mapped_column(
-        String(30),
+        String(20),
         nullable=False,
         default="DRAFT",
         server_default="DRAFT",
     )
 
+    # -----------------------------------------------------------------------
+    # Current statutory/process stage
+    # -----------------------------------------------------------------------
+
     current_stage: Mapped[str] = mapped_column(
-        String(40),
+        String(50),
         nullable=False,
-        default="PROPOSAL",
-        server_default="PROPOSAL",
+        default="INITIATION",
+        server_default="INITIATION",
     )
+
+    # -----------------------------------------------------------------------
+    # Free-form case description
+    # -----------------------------------------------------------------------
 
     description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
+
+    # -----------------------------------------------------------------------
+    # Lifecycle timestamps
+    # -----------------------------------------------------------------------
 
     opened_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
@@ -127,6 +193,21 @@ class AcquisitionCase(Base):
         DateTime(timezone=True),
         nullable=True,
     )
+
+    # -----------------------------------------------------------------------
+    # Optimistic concurrency
+    # -----------------------------------------------------------------------
+
+    version: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=1,
+        server_default="1",
+    )
+
+    # -----------------------------------------------------------------------
+    # Audit timestamps
+    # -----------------------------------------------------------------------
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -140,6 +221,10 @@ class AcquisitionCase(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+
+    # -----------------------------------------------------------------------
+    # Relationships
+    # -----------------------------------------------------------------------
 
     land_requirement: Mapped["LandRequirement"] = relationship(
         back_populates="acquisition_cases",
@@ -156,72 +241,124 @@ class AcquisitionCase(Base):
         cascade="all, delete-orphan",
     )
 
+    # -----------------------------------------------------------------------
+    # Database constraints / indexes
+    # -----------------------------------------------------------------------
+
     __table_args__ = (
         UniqueConstraint(
             "case_number",
             name="uq_acquisition_cases_case_number",
         ),
+
         CheckConstraint(
-            "case_type IN ("
-            "'STATUTORY', "
-            "'NEGOTIATED', "
+            "legal_framework IN ("
+            "'RFCTLARR_2013', "
+            "'SPECIAL_CENTRAL_ACT', "
+            "'STATE_LAW', "
             "'OTHER'"
             ")",
-            name="ck_acquisition_cases_case_type",
+            name="ck_acquisition_cases_legal_framework",
         ),
+
+        CheckConstraint(
+            "legal_route IS NULL OR legal_route IN ("
+            "'RFCTLARR_STANDARD', "
+            "'RFCTLARR_URGENT', "
+            "'SPECIAL_ACT_ROUTE', "
+            "'STATE_SPECIFIC_ROUTE', "
+            "'NEGOTIATED_PURCHASE'"
+            ")",
+            name="ck_acquisition_cases_legal_route",
+        ),
+
+        CheckConstraint(
+            "acquisition_method IN ("
+            "'COMPULSORY_ACQUISITION', "
+            "'CONSENT_BASED', "
+            "'NEGOTIATED_PURCHASE'"
+            ")",
+            name="ck_acquisition_cases_acquisition_method",
+        ),
+
         CheckConstraint(
             "status IN ("
             "'DRAFT', "
-            "'IN_REVIEW', "
-            "'ACTION_REQUIRED', "
-            "'APPROVED', "
-            "'REJECTED', "
-            "'COMPLETED'"
+            "'ACTIVE', "
+            "'ON_HOLD', "
+            "'CANCELLED', "
+            "'CLOSED'"
             ")",
             name="ck_acquisition_cases_status",
         ),
+
         CheckConstraint(
             "current_stage IN ("
-            "'PROPOSAL', "
-            "'SCRUTINY', "
+            "'INITIATION', "
             "'SIA', "
-            "'NOTIFICATION', "
-            "'SURVEY', "
-            "'OBJECTIONS', "
+            "'PRELIMINARY_NOTIFICATION', "
+            "'OBJECTIONS_AND_HEARING', "
             "'DECLARATION', "
-            "'CLAIMS_VERIFICATION', "
-            "'VALUATION', "
-            "'AWARD', "
-            "'COMPENSATION', "
             "'R_AND_R', "
+            "'CLAIMS_AND_ENQUIRY', "
+            "'COMPENSATION_DETERMINATION', "
+            "'AWARD', "
+            "'COMPENSATION_AND_RR', "
             "'POSSESSION', "
-            "'HANDOVER', "
-            "'DISPUTE', "
-            "'CLOSURE'"
+            "'VESTING', "
+            "'HANDOVER'"
             ")",
             name="ck_acquisition_cases_current_stage",
         ),
+
+        CheckConstraint(
+            "version >= 1",
+            name="ck_acquisition_cases_version_positive",
+        ),
+
         Index(
             "ix_acquisition_cases_land_requirement_id",
             "land_requirement_id",
         ),
+
         Index(
             "ix_acquisition_cases_status",
             "status",
         ),
+
         Index(
             "ix_acquisition_cases_current_stage",
             "current_stage",
         ),
+
         Index(
             "ix_acquisition_cases_responsible_authority_id",
             "responsible_authority_id",
         ),
+
+        Index(
+            "ix_acquisition_cases_legal_framework",
+            "legal_framework",
+        ),
+
+        Index(
+            "ix_acquisition_cases_acquisition_method",
+            "acquisition_method",
+        ),
     )
 
 
+# ---------------------------------------------------------------------------
+# Acquisition Case Stage History
+# ---------------------------------------------------------------------------
+
+
 class AcquisitionCaseStageHistory(Base):
-    """Immutable history of acquisition case stage transitions."""
+    """
+    Immutable history of acquisition case stage transitions.
+
+    Stage changes must be performed through the acquisition-case service.
+    """
 
     __tablename__ = "acquisition_case_stage_history"
 
@@ -239,12 +376,12 @@ class AcquisitionCaseStageHistory(Base):
     )
 
     from_stage: Mapped[str | None] = mapped_column(
-        String(40),
+        String(50),
         nullable=True,
     )
 
     to_stage: Mapped[str] = mapped_column(
-        String(40),
+        String(50),
         nullable=False,
     )
 
@@ -272,47 +409,43 @@ class AcquisitionCaseStageHistory(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "to_stage IN ("
-            "'PROPOSAL', "
-            "'SCRUTINY', "
-            "'SIA', "
-            "'NOTIFICATION', "
-            "'SURVEY', "
-            "'OBJECTIONS', "
-            "'DECLARATION', "
-            "'CLAIMS_VERIFICATION', "
-            "'VALUATION', "
-            "'AWARD', "
-            "'COMPENSATION', "
-            "'R_AND_R', "
-            "'POSSESSION', "
-            "'HANDOVER', "
-            "'DISPUTE', "
-            "'CLOSURE'"
-            ")",
-            name="ck_case_stage_history_to_stage",
-        ),
-        CheckConstraint(
             "from_stage IS NULL OR from_stage IN ("
-            "'PROPOSAL', "
-            "'SCRUTINY', "
+            "'INITIATION', "
             "'SIA', "
-            "'NOTIFICATION', "
-            "'SURVEY', "
-            "'OBJECTIONS', "
+            "'PRELIMINARY_NOTIFICATION', "
+            "'OBJECTIONS_AND_HEARING', "
             "'DECLARATION', "
-            "'CLAIMS_VERIFICATION', "
-            "'VALUATION', "
-            "'AWARD', "
-            "'COMPENSATION', "
             "'R_AND_R', "
+            "'CLAIMS_AND_ENQUIRY', "
+            "'COMPENSATION_DETERMINATION', "
+            "'AWARD', "
+            "'COMPENSATION_AND_RR', "
             "'POSSESSION', "
-            "'HANDOVER', "
-            "'DISPUTE', "
-            "'CLOSURE'"
+            "'VESTING', "
+            "'HANDOVER'"
             ")",
             name="ck_case_stage_history_from_stage",
         ),
+
+        CheckConstraint(
+            "to_stage IN ("
+            "'INITIATION', "
+            "'SIA', "
+            "'PRELIMINARY_NOTIFICATION', "
+            "'OBJECTIONS_AND_HEARING', "
+            "'DECLARATION', "
+            "'R_AND_R', "
+            "'CLAIMS_AND_ENQUIRY', "
+            "'COMPENSATION_DETERMINATION', "
+            "'AWARD', "
+            "'COMPENSATION_AND_RR', "
+            "'POSSESSION', "
+            "'VESTING', "
+            "'HANDOVER'"
+            ")",
+            name="ck_case_stage_history_to_stage",
+        ),
+
         Index(
             "ix_case_stage_history_case_id_changed_at",
             "acquisition_case_id",

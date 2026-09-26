@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
+    acquisition_cases,
     audit,
     auth,
     authorities,
@@ -27,3 +28,4 @@ api_router.include_router(permissions.router)
 api_router.include_router(audit.router)
 api_router.include_router(projects.router)
 api_router.include_router(land_requirements.router)
+api_router.include_router(acquisition_cases.router)

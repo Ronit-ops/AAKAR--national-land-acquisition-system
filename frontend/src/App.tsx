@@ -6,35 +6,35 @@ import type { FormEvent } from 'react';
 
 import {
 
-  assignUserRole,
+  assignUserRole,
 
-  clearAccessToken,
+  clearAccessToken,
 
-  getAccessToken,
+  getAccessToken,
 
-  getCurrentUser,
+  getCurrentUser,
 
-  createManagedUser,
+  createManagedUser,
 
-  getManagedUser,
+  getManagedUser,
 
-  getMyPermissions,
+  getMyPermissions,
 
-  getMyRoles,
+  getMyRoles,
 
-  listManagedUsers,
+  listManagedUsers,
 
-  listRoles,
+  listRoles,
 
-  loginUser,
+  loginUser,
 
-  registerUser,
+  registerUser,
 
-  removeUserRole,
+  removeUserRole,
 
-  updateManagedUser,
+  updateManagedUser,
 
-  updateManagedUserStatus,
+  updateManagedUserStatus,
 
 } from './lib/api';
 
@@ -48,11 +48,11 @@ import type { Role } from './types/rbac';
 
 import type {
 
-  ManagedUser,
+  ManagedUser,
 
-  ManagedUserDetail,
+  ManagedUserDetail,
 
-  UpdateManagedUserRequest,
+  UpdateManagedUserRequest,
 
 } from './types/users';
 
@@ -68,6 +68,7 @@ import AuditHistoryWorkspace from './components/AuditHistoryWorkspace';
 
 import ProjectManagementWorkspace from './components/ProjectManagementWorkspace';
 import LandRequirementWorkspace from './components/LandRequirementWorkspace';
+import AcquisitionCaseWorkspace from './components/AcquisitionCaseWorkspace';
 
 
 
@@ -93,33 +94,35 @@ type WorkspaceMode =
 
   | 'landRequirements'
 
+  | 'acquisitionCases'
+
   | 'users'
 
-  | 'departments'
+  | 'departments'
 
-  | 'authorities'
+  | 'authorities'
 
-  | 'permissions'
+  | 'permissions'
 
-  | 'audit';
+  | 'audit';
 
 
 
 function formatScopeLevel(scopeLevel: string): string {
 
-  return scopeLevel
+  return scopeLevel
 
-    .split('_')
+    .split('_')
 
-    .map(
+    .map(
 
-      (part) =>
+      (part) =>
 
-        part.charAt(0).toUpperCase() + part.slice(1),
+        part.charAt(0).toUpperCase() + part.slice(1),
 
-    )
+    )
 
-    .join(' ');
+    .join(' ');
 
 }
 
@@ -127,27 +130,27 @@ function formatScopeLevel(scopeLevel: string): string {
 
 function formatDateTime(value: string | null): string {
 
-  if (!value) {
+  if (!value) {
 
-    return 'Never';
+    return 'Never';
 
-  }
-
-
-
-  const date = new Date(value);
+  }
 
 
 
-  if (Number.isNaN(date.getTime())) {
-
-    return 'Unavailable';
-
-  }
+  const date = new Date(value);
 
 
 
-  return date.toLocaleString();
+  if (Number.isNaN(date.getTime())) {
+
+    return 'Unavailable';
+
+  }
+
+
+
+  return date.toLocaleString();
 
 }
 
@@ -155,19 +158,19 @@ function formatDateTime(value: string | null): string {
 
 function formatRoleName(roleCode: string): string {
 
-  return roleCode
+  return roleCode
 
-    .split('_')
+    .split('_')
 
-    .map(
+    .map(
 
-      (part) =>
+      (part) =>
 
-        part.charAt(0).toUpperCase() + part.slice(1),
+        part.charAt(0).toUpperCase() + part.slice(1),
 
-    )
+    )
 
-    .join(' ');
+    .join(' ');
 
 }
 
@@ -175,11 +178,11 @@ function formatRoleName(roleCode: string): string {
 
 type NavigationItem = {
 
-  workspace: Exclude<WorkspaceMode, 'overview'>;
+  workspace: Exclude<WorkspaceMode, 'overview'>;
 
-  label: string;
+  label: string;
 
-  permission: string;
+  permission: string;
 
 };
 
@@ -207,61 +210,71 @@ const OPERATIONS_NAVIGATION: NavigationItem[] = [
 
   },
 
+  {
+
+    workspace: 'acquisitionCases',
+
+    label: 'Acquisition Case Management',
+
+    permission: 'acquisition_case.read',
+
+  },
+
 ];
 
 
 
 const ADMINISTRATION_NAVIGATION: NavigationItem[] = [
 
-  {
+  {
 
-    workspace: 'users',
+    workspace: 'users',
 
-    label: 'User Management',
+    label: 'User Management',
 
-    permission: 'user.read',
+    permission: 'user.read',
 
-  },
+  },
 
-  {
+  {
 
-    workspace: 'departments',
+    workspace: 'departments',
 
-    label: 'Department Management',
+    label: 'Department Management',
 
-    permission: 'department.read',
+    permission: 'department.read',
 
-  },
+  },
 
-  {
+  {
 
-    workspace: 'authorities',
+    workspace: 'authorities',
 
-    label: 'Authority Management',
+    label: 'Authority Management',
 
-    permission: 'authority.read',
+    permission: 'authority.read',
 
-  },
+  },
 
-  {
+  {
 
-    workspace: 'permissions',
+    workspace: 'permissions',
 
-    label: 'Permission Management',
+    label: 'Permission Management',
 
-    permission: 'permission.read',
+    permission: 'permission.read',
 
-  },
+  },
 
-  {
+  {
 
-    workspace: 'audit',
+    workspace: 'audit',
 
-    label: 'Audit & Activity History',
+    label: 'Audit & Activity History',
 
-    permission: 'audit.read',
+    permission: 'audit.read',
 
-  },
+  },
 
 ];
 
@@ -269,19 +282,19 @@ const ADMINISTRATION_NAVIGATION: NavigationItem[] = [
 
 type ApplicationArea =
 
-  | 'administration'
+  | 'administration'
 
-  | 'operations'
+  | 'operations'
 
-  | 'restricted';
+  | 'restricted';
 
 
 
 const SYSTEM_ADMINISTRATION_ROLE_CODES = new Set([
 
-  'system_administrator',
+  'system_administrator',
 
-  'audit_compliance',
+  'audit_compliance',
 
 ]);
 
@@ -289,41 +302,41 @@ const SYSTEM_ADMINISTRATION_ROLE_CODES = new Set([
 
 const OPERATIONAL_ROLE_CODES = new Set([
 
-  'national_administrator',
+  'national_administrator',
 
-  'central_ministry_officer',
+  'central_ministry_officer',
 
-  'national_monitoring_officer',
+  'national_monitoring_officer',
 
-  'state_nodal_officer',
+  'state_nodal_officer',
 
-  'state_land_authority_officer',
+  'state_land_authority_officer',
 
-  'state_department_officer',
+  'state_department_officer',
 
-  'district_collector',
+  'district_collector',
 
-  'additional_collector',
+  'additional_collector',
 
-  'land_acquisition_officer',
+  'land_acquisition_officer',
 
-  'revenue_officer',
+  'revenue_officer',
 
-  'rr_officer',
+  'rr_officer',
 
-  'survey_gis_officer',
+  'survey_gis_officer',
 
-  'project_director',
+  'project_director',
 
-  'infrastructure_officer',
+  'infrastructure_officer',
 
-  'field_verification_officer',
+  'field_verification_officer',
 
-  'project_implementing_agency',
+  'project_implementing_agency',
 
-  'field_officer',
+  'field_officer',
 
-  'aakar_development_admin',
+  'aakar_development_admin',
 
 ]);
 
@@ -331,461 +344,461 @@ const OPERATIONAL_ROLE_CODES = new Set([
 
 function App() {
 
-  const { t } = useAakarLanguage();
+  const { t } = useAakarLanguage();
 
-  const [mode, setMode] = useState<AuthMode>('login');
+  const [mode, setMode] = useState<AuthMode>('login');
 
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
-  const [roles, setRoles] = useState<Role[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
 
-  const [rolesLoading, setRolesLoading] = useState(false);
+  const [rolesLoading, setRolesLoading] = useState(false);
 
-  const [rolesError, setRolesError] = useState('');
+  const [rolesError, setRolesError] = useState('');
 
-  const [permissions, setPermissions] = useState<string[]>([]);
+  const [permissions, setPermissions] = useState<string[]>([]);
 
-  const [permissionsLoading, setPermissionsLoading] = useState(false);
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
 
-  const [permissionsError, setPermissionsError] = useState('');
+  const [permissionsError, setPermissionsError] = useState('');
 
-  const [checkingSession, setCheckingSession] =
+  const [checkingSession, setCheckingSession] =
 
-    useState(true);
+    useState(true);
 
 
 
-  const [workspace, setWorkspace] =
+  const [workspace, setWorkspace] =
 
-    useState<WorkspaceMode>('overview');
+    useState<WorkspaceMode>('overview');
 
 
 
-  const permissionSet = useMemo(
+  const permissionSet = useMemo(
 
-    () => new Set(permissions),
+    () => new Set(permissions),
 
-    [permissions],
+    [permissions],
 
-  );
+  );
 
 
 
-  const isSystemAdministrationRole = useMemo(
+  const isSystemAdministrationRole = useMemo(
 
-    () =>
+    () =>
 
-      roles.some((role) =>
+      roles.some((role) =>
 
-        SYSTEM_ADMINISTRATION_ROLE_CODES.has(role.code),
+        SYSTEM_ADMINISTRATION_ROLE_CODES.has(role.code),
 
-      ),
+      ),
 
-    [roles],
+    [roles],
 
-  );
+  );
 
 
 
-  const isOperationalRole = useMemo(
+  const isOperationalRole = useMemo(
 
-    () =>
+    () =>
 
-      roles.some((role) =>
+      roles.some((role) =>
 
-        OPERATIONAL_ROLE_CODES.has(role.code),
+        OPERATIONAL_ROLE_CODES.has(role.code),
 
-      ),
+      ),
 
-    [roles],
+    [roles],
 
-  );
+  );
 
 
 
-  const applicationArea = useMemo<ApplicationArea>(() => {
+  const applicationArea = useMemo<ApplicationArea>(() => {
 
-    if (isSystemAdministrationRole) {
+    if (isSystemAdministrationRole) {
 
-      return 'administration';
+      return 'administration';
 
-    }
+    }
 
 
 
-    if (isOperationalRole) {
+    if (isOperationalRole) {
 
-      return 'operations';
+      return 'operations';
 
-    }
+    }
 
 
 
-    if (permissionSet.has('project.read')) {
+    if (permissionSet.has('project.read')) {
 
-      return 'operations';
+      return 'operations';
 
-    }
+    }
 
 
 
-    return 'restricted';
+    return 'restricted';
 
-  }, [
+  }, [
 
-    isOperationalRole,
+    isOperationalRole,
 
-    isSystemAdministrationRole,
+    isSystemAdministrationRole,
 
-    permissionSet,
+    permissionSet,
 
-  ]);
+  ]);
 
 
 
-  const visibleOperations = useMemo(
+  const visibleOperations = useMemo(
 
-    () =>
+    () =>
 
-      applicationArea === 'operations'
+      applicationArea === 'operations'
 
-        ? OPERATIONS_NAVIGATION.filter((item) =>
+        ? OPERATIONS_NAVIGATION.filter((item) =>
 
-            permissionSet.has(item.permission),
+            permissionSet.has(item.permission),
 
-          )
+          )
 
-        : [],
+        : [],
 
-    [applicationArea, permissionSet],
+    [applicationArea, permissionSet],
 
-  );
+  );
 
 
 
-  const visibleAdministration = useMemo(
+  const visibleAdministration = useMemo(
 
-    () =>
+    () =>
 
-      applicationArea === 'administration'
+      applicationArea === 'administration'
 
-        ? ADMINISTRATION_NAVIGATION.filter((item) =>
+        ? ADMINISTRATION_NAVIGATION.filter((item) =>
 
-            permissionSet.has(item.permission),
+            permissionSet.has(item.permission),
 
-          )
+          )
 
-        : [],
+        : [],
 
-    [applicationArea, permissionSet],
+    [applicationArea, permissionSet],
 
-  );
+  );
 
 
 
-  const visibleNavigation = useMemo(
+  const visibleNavigation = useMemo(
 
-    () =>
+    () =>
 
-      applicationArea === 'administration'
+      applicationArea === 'administration'
 
-        ? visibleAdministration
+        ? visibleAdministration
 
-        : visibleOperations,
+        : visibleOperations,
 
-    [
+    [
 
-      applicationArea,
+      applicationArea,
 
-      visibleAdministration,
+      visibleAdministration,
 
-      visibleOperations,
+      visibleOperations,
 
-    ],
+    ],
 
-  );
+  );
 
 
 
-  const hasPermission = useCallback(
+  const hasPermission = useCallback(
 
-    (permission: string) =>
+    (permission: string) =>
 
-      permissionSet.has(permission),
+      permissionSet.has(permission),
 
-    [permissionSet],
+    [permissionSet],
 
-  );
+  );
 
 
 
-  useEffect(() => {
+  useEffect(() => {
 
-    const restoreSession = async () => {
+    const restoreSession = async () => {
 
-      if (!getAccessToken()) {
+      if (!getAccessToken()) {
 
-        setCheckingSession(false);
+        setCheckingSession(false);
 
-        return;
+        return;
 
-      }
+      }
 
 
 
-      try {
+      try {
 
-        const currentUser =
+        const currentUser =
 
-          await getCurrentUser();
+          await getCurrentUser();
 
 
 
-        setUser(currentUser);
+        setUser(currentUser);
 
-      } catch {
+      } catch {
 
-        clearAccessToken();
+        clearAccessToken();
 
-      } finally {
+      } finally {
 
-        setCheckingSession(false);
+        setCheckingSession(false);
 
-      }
+      }
 
-    };
+    };
 
 
 
-    void restoreSession();
+    void restoreSession();
 
-  }, []);
+  }, []);
 
 
 
-  useEffect(() => {
+  useEffect(() => {
 
-    if (!user) {
+    if (!user) {
 
-      return;
+      return;
 
-    }
+    }
 
 
 
-    let cancelled = false;
+    let cancelled = false;
 
 
 
-    const loadAccessContext = async () => {
+    const loadAccessContext = async () => {
 
-      setRolesLoading(true);
+      setRolesLoading(true);
 
-      setPermissionsLoading(true);
+      setPermissionsLoading(true);
 
-      setRolesError('');
+      setRolesError('');
 
-      setPermissionsError('');
+      setPermissionsError('');
 
 
 
-      try {
+      try {
 
-        const [rolesResponse, permissionsResponse] =
+        const [rolesResponse, permissionsResponse] =
 
-          await Promise.all([
+          await Promise.all([
 
-            getMyRoles(),
+            getMyRoles(),
 
-            getMyPermissions(),
+            getMyPermissions(),
 
-          ]);
+          ]);
 
 
 
-        if (!cancelled) {
+        if (!cancelled) {
 
-          setRoles(rolesResponse.roles);
+          setRoles(rolesResponse.roles);
 
-          setPermissions(
+          setPermissions(
 
-            permissionsResponse.permissions,
+            permissionsResponse.permissions,
 
-          );
+          );
 
-        }
+        }
 
-      } catch (requestError) {
+      } catch (requestError) {
 
-        if (!cancelled) {
+        if (!cancelled) {
 
-          const message =
+          const message =
 
-            requestError instanceof Error
+            requestError instanceof Error
 
-              ? requestError.message
+              ? requestError.message
 
-              : 'Unable to load your access permissions.';
+              : 'Unable to load your access permissions.';
 
 
 
-          setRolesError(message);
+          setRolesError(message);
 
-          setPermissionsError(message);
+          setPermissionsError(message);
 
-          setRoles([]);
+          setRoles([]);
 
-          setPermissions([]);
+          setPermissions([]);
 
-        }
+        }
 
-      } finally {
+      } finally {
 
-        if (!cancelled) {
+        if (!cancelled) {
 
-          setRolesLoading(false);
+          setRolesLoading(false);
 
-          setPermissionsLoading(false);
+          setPermissionsLoading(false);
 
-        }
+        }
 
-      }
+      }
 
-    };
+    };
 
 
 
-    void loadAccessContext();
+    void loadAccessContext();
 
 
 
-    return () => {
+    return () => {
 
-      cancelled = true;
+      cancelled = true;
 
-    };
+    };
 
-  }, [user]);
+  }, [user]);
 
 
 
-  useEffect(() => {
+  useEffect(() => {
 
-    if (!user || rolesLoading || permissionsLoading) {
+    if (!user || rolesLoading || permissionsLoading) {
 
-      return;
+      return;
 
-    }
+    }
 
 
 
-    if (workspace === 'overview') {
+    if (workspace === 'overview') {
 
-      return;
+      return;
 
-    }
+    }
 
 
 
-    const selectedItem = visibleNavigation.find(
+    const selectedItem = visibleNavigation.find(
 
-      (item) => item.workspace === workspace,
+      (item) => item.workspace === workspace,
 
-    );
+    );
 
 
 
-    if (!selectedItem) {
+    if (!selectedItem) {
 
-      setWorkspace('overview');
+      setWorkspace('overview');
 
-    }
+    }
 
-  }, [
+  }, [
 
-    permissionsLoading,
+    permissionsLoading,
 
-    rolesLoading,
+    rolesLoading,
 
-    user,
+    user,
 
-    visibleNavigation,
+    visibleNavigation,
 
-    workspace,
+    workspace,
 
-  ]);
+  ]);
 
 
 
-  const handleSignOut = () => {
+  const handleSignOut = () => {
 
-    clearAccessToken();
+    clearAccessToken();
 
-    setRoles([]);
+    setRoles([]);
 
-    setRolesError('');
+    setRolesError('');
 
-    setPermissions([]);
+    setPermissions([]);
 
-    setPermissionsError('');
+    setPermissionsError('');
 
-    setWorkspace('overview');
+    setWorkspace('overview');
 
-    setUser(null);
+    setUser(null);
 
-  };
+  };
 
 
 
-  const handleWorkspaceChange = (
+  const handleWorkspaceChange = (
 
-    nextWorkspace: WorkspaceMode,
+    nextWorkspace: WorkspaceMode,
 
-  ) => {
+  ) => {
 
-    if (nextWorkspace === 'overview') {
+    if (nextWorkspace === 'overview') {
 
-      setWorkspace('overview');
+      setWorkspace('overview');
 
-      return;
+      return;
 
-    }
+    }
 
 
 
-    const navigationItem = visibleNavigation.find(
+    const navigationItem = visibleNavigation.find(
 
-      (item) => item.workspace === nextWorkspace,
+      (item) => item.workspace === nextWorkspace,
 
-    );
+    );
 
 
 
-    if (navigationItem) {
+    if (navigationItem) {
 
-      setWorkspace(nextWorkspace);
+      setWorkspace(nextWorkspace);
 
-    }
+    }
 
-  };
+  };
 
 
 
-  const renderWorkspace = () => {
+  const renderWorkspace = () => {
 
-    if (workspace === 'projects') {
+    if (workspace === 'projects') {
 
-      if (!hasPermission('project.read')) {
+      if (!hasPermission('project.read')) {
 
-        return null;
+        return null;
 
-      }
+      }
 
 
 
-      return <ProjectManagementWorkspace />;
+      return <ProjectManagementWorkspace />;
 
-    }
+    }
 
     if (workspace === 'landRequirements') {
       if (!hasPermission('land_requirement.read')) {
@@ -799,103 +812,115 @@ function App() {
       );
     }
 
+    if (workspace === 'acquisitionCases') {
+      if (!hasPermission('acquisition_case.read')) {
+        return null;
+      }
 
-
-    if (workspace === 'users') {
-
-      if (!hasPermission('user.read')) {
-
-        return null;
-
-      }
-
-
-
-      return (
-
-        <UserManagementWorkspace
-
-          currentUser={user!}
-
-        />
-
-      );
-
-    }
+      return (
+        <AcquisitionCaseWorkspace
+          permissions={permissionSet}
+        />
+      );
+    }
 
 
 
-    if (workspace === 'departments') {
+    if (workspace === 'users') {
 
-      if (!hasPermission('department.read')) {
+      if (!hasPermission('user.read')) {
 
-        return null;
+        return null;
 
-      }
-
-
-
-      return <DepartmentManagementWorkspace />;
-
-    }
+      }
 
 
 
-    if (workspace === 'authorities') {
+      return (
 
-      if (!hasPermission('authority.read')) {
+        <UserManagementWorkspace
 
-        return null;
+          currentUser={user!}
 
-      }
+        />
 
+      );
 
-
-      return <AuthorityManagementWorkspace />;
-
-    }
+    }
 
 
 
-    if (workspace === 'permissions') {
+    if (workspace === 'departments') {
 
-      if (!hasPermission('permission.read')) {
+      if (!hasPermission('department.read')) {
 
-        return null;
+        return null;
 
-      }
-
-
-
-      return <PermissionManagementWorkspace />;
-
-    }
+      }
 
 
 
-    if (workspace === 'audit') {
+      return <DepartmentManagementWorkspace />;
 
-      if (!hasPermission('audit.read')) {
-
-        return null;
-
-      }
+    }
 
 
 
-      return <AuditHistoryWorkspace />;
+    if (workspace === 'authorities') {
 
-    }
+      if (!hasPermission('authority.read')) {
 
+        return null;
 
-
-    const isAdministration =
-
-      applicationArea === 'administration';
+      }
 
 
 
-    const areaTitle = isAdministration
+      return <AuthorityManagementWorkspace />;
+
+    }
+
+
+
+    if (workspace === 'permissions') {
+
+      if (!hasPermission('permission.read')) {
+
+        return null;
+
+      }
+
+
+
+      return <PermissionManagementWorkspace />;
+
+    }
+
+
+
+    if (workspace === 'audit') {
+
+      if (!hasPermission('audit.read')) {
+
+        return null;
+
+      }
+
+
+
+      return <AuditHistoryWorkspace />;
+
+    }
+
+
+
+    const isAdministration =
+
+      applicationArea === 'administration';
+
+
+
+    const areaTitle = isAdministration
       ? t('workspace.systemAdministration')
       : applicationArea === 'operations'
         ? t('workspace.landAcquisitionOperations')
@@ -903,7 +928,7 @@ function App() {
 
 
 
-    const areaDescription = isAdministration
+    const areaDescription = isAdministration
       ? t('workspace.platformGovernance')
       : applicationArea === 'operations'
         ? t('workspace.projectLifecycle')
@@ -911,42 +936,42 @@ function App() {
 
 
 
-    return (
+    return (
 
-      <section className="workspace-home">
+      <section className="workspace-home">
 
-        <div className="workspace-home-head">
+        <div className="workspace-home-head">
 
-          <div>
+          <div>
 
-            <p className="workspace-eyebrow">
+            <p className="workspace-eyebrow">
                 {isAdministration
                   ? t('workspace.governance').toUpperCase()
                   : t('workspace.landAcquisitionOperations').toUpperCase()}
               </p>
 
-            <h1>{areaTitle}</h1>
+            <h1>{areaTitle}</h1>
 
-            <p>{areaDescription}</p>
+            <p>{areaDescription}</p>
 
-          </div>
+          </div>
 
 
 
-          <div className="workspace-secure-badge">
+          <div className="workspace-secure-badge">
               <span className="status-dot" />
               {t('common.secureSession')}
             </div>
 
-        </div>
+        </div>
 
 
 
-        <div className="workspace-home-grid">
+        <div className="workspace-home-grid">
 
-          <article className="workspace-info-card workspace-info-card-primary">
+          <article className="workspace-info-card workspace-info-card-primary">
 
-            <span className="workspace-card-label">
+            <span className="workspace-card-label">
                 {t('workspace.rolePermissionContext').toUpperCase()}
               </span>
               <strong>{roles[0]?.name ?? t('common.unavailable')}</strong>
@@ -958,13 +983,13 @@ function App() {
                     : t('overview.roleRequired')}
               </p>
 
-          </article>
+          </article>
 
 
 
-          <article className="workspace-info-card">
+          <article className="workspace-info-card">
 
-            <span className="workspace-card-label">
+            <span className="workspace-card-label">
                 {t('overview.effectiveAccess')}
               </span>
               <strong>
@@ -972,153 +997,153 @@ function App() {
               </strong>
               <p>{t('workspace.rolePermissionContext')}</p>
 
-          </article>
+          </article>
 
 
 
-          <article className="workspace-info-card">
+          <article className="workspace-info-card">
 
-            <span className="workspace-card-label">
+            <span className="workspace-card-label">
                 {t('overview.currentUser')}
               </span>
 
-            <strong>{user!.full_name}</strong>
+            <strong>{user!.full_name}</strong>
 
-            <p>{user!.email}</p>
+            <p>{user!.email}</p>
 
-          </article>
+          </article>
 
-        </div>
+        </div>
 
 
 
-        <section className="workspace-module-panel">
+        <section className="workspace-module-panel">
 
-          <div>
+          <div>
 
-            <span className="workspace-eyebrow">
+            <span className="workspace-eyebrow">
                 {t('overview.authorizedModules').toUpperCase()}
               </span>
               <h2>{t('overview.authorizedModules')}</h2>
 
-          </div>
+          </div>
 
 
 
-          {visibleNavigation.length > 0 ? (
+          {visibleNavigation.length > 0 ? (
 
-            <div className="workspace-module-list">
+            <div className="workspace-module-list">
 
-              {visibleNavigation.map((item) => (
+              {visibleNavigation.map((item) => (
 
-                <button
+                <button
 
-                  type="button"
+                  type="button"
 
-                  key={item.workspace}
+                  key={item.workspace}
 
-                  className="workspace-module-row"
+                  className="workspace-module-row"
 
-                  onClick={() => handleWorkspaceChange(item.workspace)}
+                  onClick={() => handleWorkspaceChange(item.workspace)}
 
-                >
+                >
 
-                  <span className="workspace-module-icon">
+                  <span className="workspace-module-icon">
 
-                    {isAdministration ? '⚙' : '▣'}
+                    {isAdministration ? '⚙' : '▣'}
 
-                  </span>
+                  </span>
 
-                  <span>
+                  <span>
 
-                    <strong>{item.label}</strong>
+                    <strong>{item.label}</strong>
 
-                    <small>{t('common.authorizedModule')}</small>
+                    <small>{t('common.authorizedModule')}</small>
 
-                  </span>
+                  </span>
 
-                  <span className="workspace-module-arrow">→</span>
+                  <span className="workspace-module-arrow">→</span>
 
-                </button>
+                </button>
 
-              ))}
+              ))}
 
-            </div>
+            </div>
 
-          ) : (
+          ) : (
 
-            <div className="workspace-empty-state">
+            <div className="workspace-empty-state">
                 <strong>{t('overview.noActiveModules')}</strong>
                 <p>{t('overview.roleRequired')}</p>
               </div>
 
-          )}
+          )}
 
-        </section>
-
-
-
-        {rolesError && (
-
-          <div className="error-message" role="alert">
-
-            {rolesError}
-
-          </div>
-
-        )}
+        </section>
 
 
 
-        {permissionsError && (
+        {rolesError && (
 
-          <div className="error-message" role="alert">
+          <div className="error-message" role="alert">
 
-            {permissionsError}
+            {rolesError}
 
-          </div>
+          </div>
 
-        )}
-
-      </section>
-
-    );
-
-  };
+        )}
 
 
 
-  if (checkingSession) {
+        {permissionsError && (
 
-    return (
+          <div className="error-message" role="alert">
 
-      <main className="auth-shell">
+            {permissionsError}
 
-        <div className="loading-screen">
+          </div>
 
-          <div className="brand-mark">आ</div>
+        )}
 
-          <p>{t('common.secureSession')}...</p>
+      </section>
 
-        </div>
+    );
 
-      </main>
-
-    );
-
-  }
+  };
 
 
 
-  if (user) {
+  if (checkingSession) {
 
-    const isAdministration =
+    return (
 
-      applicationArea === 'administration';
+      <main className="auth-shell">
+
+        <div className="loading-screen">
+
+          <div className="brand-mark">आ</div>
+
+          <p>{t('common.secureSession')}...</p>
+
+        </div>
+
+      </main>
+
+    );
+
+  }
 
 
 
-    const shellTitle = isAdministration
+  if (user) {
+
+    const isAdministration =
+
+      applicationArea === 'administration';
+
+
+
+    const shellTitle = isAdministration
       ? t('workspace.systemAdministration')
       : applicationArea === 'operations'
         ? t('workspace.landAcquisitionOperations')
@@ -1132,559 +1157,559 @@ function App() {
 
 
 
-    return (
+    return (
 
-      <main
+      <main
 
-        className={`app-shell aakar-v2-shell ${
+        className={`app-shell aakar-v2-shell ${
 
-          applicationArea === 'administration'
+          applicationArea === 'administration'
 
-            ? 'aakar-admin-shell'
+            ? 'aakar-admin-shell'
 
-            : applicationArea === 'operations'
+            : applicationArea === 'operations'
 
-              ? 'aakar-operations-shell'
+              ? 'aakar-operations-shell'
 
-              : 'aakar-restricted-shell'
+              : 'aakar-restricted-shell'
 
-        }`}
+        }`}
 
-      >
+      >
 
-        <aside className="aakar-v2-sidebar">
+        <aside className="aakar-v2-sidebar">
 
-          <div className="aakar-v2-brand">
+          <div className="aakar-v2-brand">
 
-            <div className="brand-mark brand-mark-small">आ</div>
+            <div className="brand-mark brand-mark-small">आ</div>
 
-            <div>
+            <div>
 
-              <strong>AAKAR</strong>
+              <strong>AAKAR</strong>
 
-              <span>आकार</span>
+              <span>आकार</span>
 
-            </div>
+            </div>
 
-          </div>
-
-
-
-          <div className="aakar-v2-area-card">
-
-            <span>{t('workspace.aakarAccess').toUpperCase()}</span>
-
-            <strong>{shellTitle}</strong>
-
-            <small>{shellSubtitle}</small>
-
-          </div>
+          </div>
 
 
 
-          <nav
+          <div className="aakar-v2-area-card">
 
-            className="aakar-v2-navigation"
+            <span>{t('workspace.aakarAccess').toUpperCase()}</span>
 
-            aria-label={t('workspace.aakarAccess')}
+            <strong>{shellTitle}</strong>
 
-          >
+            <small>{shellSubtitle}</small>
 
-            <button
-
-              type="button"
-
-              className={
-
-                workspace === 'overview'
-
-                  ? 'aakar-v2-nav-item aakar-v2-nav-item-active'
-
-                  : 'aakar-v2-nav-item'
-
-              }
-
-              onClick={() => handleWorkspaceChange('overview')}
-
-            >
-
-              <span className="aakar-v2-nav-icon">⌂</span>
-
-              <span>{t('workspace.overview')}</span>
-
-            </button>
+          </div>
 
 
 
-            {applicationArea === 'operations' &&
+          <nav
 
-              visibleOperations.length > 0 && (
+            className="aakar-v2-navigation"
 
-                <div className="aakar-v2-nav-group">
+            aria-label={t('workspace.aakarAccess')}
 
-                  <span className="aakar-v2-nav-label">
+          >
+
+            <button
+
+              type="button"
+
+              className={
+
+                workspace === 'overview'
+
+                  ? 'aakar-v2-nav-item aakar-v2-nav-item-active'
+
+                  : 'aakar-v2-nav-item'
+
+              }
+
+              onClick={() => handleWorkspaceChange('overview')}
+
+            >
+
+              <span className="aakar-v2-nav-icon">⌂</span>
+
+              <span>{t('workspace.overview')}</span>
+
+            </button>
+
+
+
+            {applicationArea === 'operations' &&
+
+              visibleOperations.length > 0 && (
+
+                <div className="aakar-v2-nav-group">
+
+                  <span className="aakar-v2-nav-label">
                     {t('workspace.operations').toUpperCase()}
                   </span>
 
-                  {visibleOperations.map((item) => (
+                  {visibleOperations.map((item) => (
 
-                    <button
+                    <button
 
-                      type="button"
+                      type="button"
 
-                      key={item.workspace}
+                      key={item.workspace}
 
-                      className={
+                      className={
 
-                        workspace === item.workspace
+                        workspace === item.workspace
 
-                          ? 'aakar-v2-nav-item aakar-v2-nav-item-active'
+                          ? 'aakar-v2-nav-item aakar-v2-nav-item-active'
 
-                          : 'aakar-v2-nav-item'
+                          : 'aakar-v2-nav-item'
 
-                      }
+                      }
 
-                      onClick={() => handleWorkspaceChange(item.workspace)}
+                      onClick={() => handleWorkspaceChange(item.workspace)}
 
-                    >
+                    >
 
-                      <span className="aakar-v2-nav-icon">▣</span>
+                      <span className="aakar-v2-nav-icon">▣</span>
 
-                      <span>{
+                      <span>{
 
-                        item.workspace === 'projects'
+                        item.workspace === 'projects'
 
-                          ? t('nav.projectManagement')
+                          ? t('nav.projectManagement')
 
-                          : item.workspace === 'users'
+                          : item.workspace === 'users'
 
-                            ? t('nav.userManagement')
+                            ? t('nav.userManagement')
 
-                            : item.workspace === 'departments'
+                            : item.workspace === 'departments'
 
-                              ? t('nav.departmentManagement')
+                              ? t('nav.departmentManagement')
 
-                              : item.workspace === 'authorities'
+                              : item.workspace === 'authorities'
 
-                                ? t('nav.authorityManagement')
+                                ? t('nav.authorityManagement')
 
-                                : item.workspace === 'permissions'
+                                : item.workspace === 'permissions'
 
-                                  ? t('nav.permissionManagement')
+                                  ? t('nav.permissionManagement')
 
-                                  : item.workspace === 'audit'
+                                  : item.workspace === 'audit'
 
-                                    ? t('nav.auditHistory')
+                                    ? t('nav.auditHistory')
 
-                                    : item.label
+                                    : item.label
 
-                      }</span>
+                      }</span>
 
-                    </button>
+                    </button>
 
-                  ))}
+                  ))}
 
-                </div>
+                </div>
 
-              )}
+              )}
 
 
 
-            {applicationArea === 'administration' &&
+            {applicationArea === 'administration' &&
 
-              visibleAdministration.length > 0 && (
+              visibleAdministration.length > 0 && (
 
-                <div className="aakar-v2-nav-group">
+                <div className="aakar-v2-nav-group">
 
-                  <span className="aakar-v2-nav-label">
+                  <span className="aakar-v2-nav-label">
                     {t('workspace.governance').toUpperCase()}
                   </span>
 
-                  {visibleAdministration.map((item) => (
+                  {visibleAdministration.map((item) => (
 
-                    <button
+                    <button
 
-                      type="button"
+                      type="button"
 
-                      key={item.workspace}
+                      key={item.workspace}
 
-                      className={
+                      className={
 
-                        workspace === item.workspace
+                        workspace === item.workspace
 
-                          ? 'aakar-v2-nav-item aakar-v2-nav-item-active'
+                          ? 'aakar-v2-nav-item aakar-v2-nav-item-active'
 
-                          : 'aakar-v2-nav-item'
+                          : 'aakar-v2-nav-item'
 
-                      }
+                      }
 
-                      onClick={() => handleWorkspaceChange(item.workspace)}
+                      onClick={() => handleWorkspaceChange(item.workspace)}
 
-                    >
+                    >
 
-                      <span className="aakar-v2-nav-icon">⚙</span>
+                      <span className="aakar-v2-nav-icon">⚙</span>
 
-                      <span>{
+                      <span>{
 
-                        item.workspace === 'projects'
+                        item.workspace === 'projects'
 
-                          ? t('nav.projectManagement')
+                          ? t('nav.projectManagement')
 
-                          : item.workspace === 'users'
+                          : item.workspace === 'users'
 
-                            ? t('nav.userManagement')
+                            ? t('nav.userManagement')
 
-                            : item.workspace === 'departments'
+                            : item.workspace === 'departments'
 
-                              ? t('nav.departmentManagement')
+                              ? t('nav.departmentManagement')
 
-                              : item.workspace === 'authorities'
+                              : item.workspace === 'authorities'
 
-                                ? t('nav.authorityManagement')
+                                ? t('nav.authorityManagement')
 
-                                : item.workspace === 'permissions'
+                                : item.workspace === 'permissions'
 
-                                  ? t('nav.permissionManagement')
+                                  ? t('nav.permissionManagement')
 
-                                  : item.workspace === 'audit'
+                                  : item.workspace === 'audit'
 
-                                    ? t('nav.auditHistory')
+                                    ? t('nav.auditHistory')
 
-                                    : item.label
+                                    : item.label
 
-                      }</span>
+                      }</span>
 
-                    </button>
+                    </button>
 
-                  ))}
+                  ))}
 
-                </div>
+                </div>
 
-              )}
+              )}
 
-          </nav>
+          </nav>
 
 
 
-          <div className="aakar-v2-sidebar-footer">
+          <div className="aakar-v2-sidebar-footer">
 
-            <div className="aakar-v2-user">
+            <div className="aakar-v2-user">
 
-              <div className="aakar-v2-user-avatar">
+              <div className="aakar-v2-user-avatar">
 
-                {user.full_name.charAt(0).toUpperCase()}
+                {user.full_name.charAt(0).toUpperCase()}
 
-              </div>
+              </div>
 
-              <div>
+              <div>
 
-                <strong>{user.full_name}</strong>
+                <strong>{user.full_name}</strong>
 
-                <span>
+                <span>
 
-                  {roles[0]?.name ?? 'Authenticated user'}
+                  {roles[0]?.name ?? 'Authenticated user'}
 
-                </span>
+                </span>
 
-              </div>
+              </div>
 
-            </div>
+            </div>
 
 
 
-            <button
+            <button
 
-              type="button"
+              type="button"
 
-              className="aakar-v2-signout"
+              className="aakar-v2-signout"
 
-              onClick={handleSignOut}
+              onClick={handleSignOut}
 
-            >
+            >
 
-              {t('common.signOut')}
+              {t('common.signOut')}
 
-            </button>
+            </button>
 
-          </div>
+          </div>
 
-        </aside>
+        </aside>
 
 
 
-        <section className="aakar-v2-main">
+        <section className="aakar-v2-main">
 
-          <header className="aakar-v2-topbar">
+          <header className="aakar-v2-topbar">
 
-            <div>
+            <div>
 
-              <p className="aakar-v2-breadcrumb">
+              <p className="aakar-v2-breadcrumb">
 
-                AAKAR / {shellTitle}
+                AAKAR / {shellTitle}
 
-              </p>
+              </p>
 
-              <h1>
+              <h1>
 
-                {workspace === 'overview'
+                {workspace === 'overview'
 
-                  ? t('overview.title')
+                  ? t('overview.title')
 
-                  : visibleNavigation.find(
+                  : visibleNavigation.find(
 
-                      (item) => item.workspace === workspace,
+                      (item) => item.workspace === workspace,
 
-                    )?.workspace === 'projects'
+                    )?.workspace === 'projects'
 
-                    ? t('nav.projectManagement')
+                    ? t('nav.projectManagement')
 
-                    : visibleNavigation.find((item) => item.workspace === workspace)?.workspace === 'users'
+                    : visibleNavigation.find((item) => item.workspace === workspace)?.workspace === 'users'
 
-                      ? t('nav.userManagement')
+                      ? t('nav.userManagement')
 
-                      : visibleNavigation.find((item) => item.workspace === workspace)?.workspace === 'departments'
+                      : visibleNavigation.find((item) => item.workspace === workspace)?.workspace === 'departments'
 
-                        ? t('nav.departmentManagement')
+                        ? t('nav.departmentManagement')
 
-                        : visibleNavigation.find((item) => item.workspace === workspace)?.workspace === 'authorities'
+                        : visibleNavigation.find((item) => item.workspace === workspace)?.workspace === 'authorities'
 
-                          ? t('nav.authorityManagement')
+                          ? t('nav.authorityManagement')
 
-                          : visibleNavigation.find((item) => item.workspace === workspace)?.workspace === 'permissions'
+                          : visibleNavigation.find((item) => item.workspace === workspace)?.workspace === 'permissions'
 
-                            ? t('nav.permissionManagement')
+                            ? t('nav.permissionManagement')
 
-                            : visibleNavigation.find((item) => item.workspace === workspace)?.workspace === 'audit'
+                            : visibleNavigation.find((item) => item.workspace === workspace)?.workspace === 'audit'
 
-                              ? t('nav.auditHistory')
+                              ? t('nav.auditHistory')
 
-                              : visibleNavigation.find((item) => item.workspace === workspace)?.label ?? t('workspace.aakarAccess')}
+                              : visibleNavigation.find((item) => item.workspace === workspace)?.label ?? t('workspace.aakarAccess')}
 
-              </h1>
+              </h1>
 
-            </div>
+            </div>
 
 
 
-            <div className="aakar-v2-topbar-meta">
+            <div className="aakar-v2-topbar-meta">
 
-              <LanguageSelector />
+              <LanguageSelector />
 
-              {permissionsLoading || rolesLoading ? (
+              {permissionsLoading || rolesLoading ? (
 
-                <span className="aakar-v2-access-status is-loading">
+                <span className="aakar-v2-access-status is-loading">
 
-                  {t('common.loadingAccess')}
+                  {t('common.loadingAccess')}
 
-                </span>
+                </span>
 
-              ) : (
+              ) : (
 
-                <span className="aakar-v2-access-status">
+                <span className="aakar-v2-access-status">
 
-                  <span className="status-dot" />
+                  <span className="status-dot" />
 
-                  {t('common.secureSession')}
+                  {t('common.secureSession')}
 
-                </span>
+                </span>
 
-              )}
+              )}
 
-            </div>
+            </div>
 
-          </header>
+          </header>
 
 
 
-          <div className="aakar-v2-content">
+          <div className="aakar-v2-content">
 
-            {rolesLoading || permissionsLoading ? (
+            {rolesLoading || permissionsLoading ? (
 
-              <section className="workspace-access-loading">
+              <section className="workspace-access-loading">
 
-                <div className="workspace-loading-mark">आ</div>
+                <div className="workspace-loading-mark">आ</div>
 
-                <p>{t('common.preparingWorkspace')}</p>
+                <p>{t('common.preparingWorkspace')}</p>
 
-              </section>
+              </section>
 
-            ) : (
+            ) : (
 
-              renderWorkspace()
+              renderWorkspace()
 
-            )}
+            )}
 
-          </div>
+          </div>
 
-        </section>
+        </section>
 
-      </main>
+      </main>
 
-    );
+    );
 
-  }
+  }
 
 
 
-  return (
+  return (
 
-    <main className="auth-shell">
+    <main className="auth-shell">
 
-      <section className="auth-visual">
+      <section className="auth-visual">
 
-        <div className="contour contour-one" />
+        <div className="contour contour-one" />
 
-        <div className="contour contour-two" />
+        <div className="contour contour-two" />
 
-        <div className="contour contour-three" />
+        <div className="contour contour-three" />
 
 
 
-        <div className="visual-content">
+        <div className="visual-content">
 
-          <div className="brand">
+          <div className="brand">
 
-            <div className="brand-mark">आ</div>
+            <div className="brand-mark">आ</div>
 
 
 
-            <div>
+            <div>
 
-              <strong>AAKAR</strong>
+              <strong>AAKAR</strong>
 
-              <span>आकार</span>
+              <span>आकार</span>
 
-            </div>
+            </div>
 
-          </div>
+          </div>
 
 
 
-          <div className="visual-copy">
+          <div className="visual-copy">
 
-            <p className="eyebrow">
+            <p className="eyebrow">
 
-              NATIONAL LAND MANAGEMENT SYSTEM
+              NATIONAL LAND MANAGEMENT SYSTEM
 
-            </p>
+            </p>
 
 
 
-            <h1>
+            <h1>
 
-              Shaping land.
+              Shaping land.
 
-              <br />
+              <br />
 
-              Empowering development.
+              Empowering development.
 
-            </h1>
+            </h1>
 
 
 
-            <p>
+            <p>
 
-              Secure access to the AAKAR platform
+              Secure access to the AAKAR platform
 
-              for digital land acquisition workflows,
+              for digital land acquisition workflows,
 
-              records, and operational monitoring.
+              records, and operational monitoring.
 
-            </p>
+            </p>
 
-          </div>
+          </div>
 
 
 
-          <div className="visual-footer">
+          <div className="visual-footer">
 
-            <span>
+            <span>
 
-              Secure government access
+              Secure government access
 
-            </span>
+            </span>
 
 
 
-            <span>AAKAR v0.1</span>
+            <span>AAKAR v0.1</span>
 
-          </div>
+          </div>
 
-        </div>
+        </div>
 
-      </section>
+      </section>
 
 
 
-      <section className="auth-panel">
+      <section className="auth-panel">
 
-        <div className="aakar-auth-language">
+        <div className="aakar-auth-language">
 
-          <LanguageSelector />
+          <LanguageSelector />
 
-        </div>
+        </div>
 
-        <div className="auth-card">
+        <div className="auth-card">
 
-          <div className="mobile-brand">
+          <div className="mobile-brand">
 
-            <div className="brand-mark">आ</div>
+            <div className="brand-mark">आ</div>
 
 
 
-            <div>
+            <div>
 
-              <strong>AAKAR</strong>
+              <strong>AAKAR</strong>
 
-              <span>आकार</span>
+              <span>आकार</span>
 
-            </div>
+            </div>
 
-          </div>
+          </div>
 
 
 
-          {mode === 'login' ? (
+          {mode === 'login' ? (
 
-            <LoginForm
+            <LoginForm
 
-              onAuthenticated={setUser}
+              onAuthenticated={setUser}
 
-              onSwitchToRegister={() =>
+              onSwitchToRegister={() =>
 
-                setMode('register')
+                setMode('register')
 
-              }
+              }
 
-            />
+            />
 
-          ) : (
+          ) : (
 
-            <RegisterForm
+            <RegisterForm
 
-              onRegistered={() =>
+              onRegistered={() =>
 
-                setMode('login')
+                setMode('login')
 
-              }
+              }
 
-              onSwitchToLogin={() =>
+              onSwitchToLogin={() =>
 
-                setMode('login')
+                setMode('login')
 
-              }
+              }
 
-            />
+            />
 
-          )}
+          )}
 
-        </div>
+        </div>
 
-      </section>
+      </section>
 
-    </main>
+    </main>
 
-  );
+  );
 
 }
 
@@ -1692,7 +1717,7 @@ function App() {
 
 interface UserManagementWorkspaceProps {
 
-  currentUser: User;
+  currentUser: User;
 
 }
 
@@ -1700,1799 +1725,1799 @@ interface UserManagementWorkspaceProps {
 
 function UserManagementWorkspace({
 
-  currentUser,
+  currentUser,
 
 }: UserManagementWorkspaceProps) {
 
-  const [users, setUsers] =
+  const [users, setUsers] =
 
-    useState<ManagedUser[]>([]);
+    useState<ManagedUser[]>([]);
 
 
 
-  const [selectedUserId, setSelectedUserId] =
+  const [selectedUserId, setSelectedUserId] =
 
-    useState<string | null>(null);
+    useState<string | null>(null);
 
 
 
-  const [selectedUser, setSelectedUser] =
+  const [selectedUser, setSelectedUser] =
 
-    useState<ManagedUserDetail | null>(null);
+    useState<ManagedUserDetail | null>(null);
 
 
 
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState('');
 
 
 
-  const [activeFilter, setActiveFilter] =
+  const [activeFilter, setActiveFilter] =
 
-    useState<
+    useState<
 
-      'all' | 'active' | 'inactive'
+      'all' | 'active' | 'inactive'
 
-    >('all');
+    >('all');
 
 
 
-  const [offset, setOffset] = useState(0);
+  const [offset, setOffset] = useState(0);
 
-  const limit = 25;
+  const limit = 25;
 
 
 
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState(0);
 
 
 
-  const [loadingUsers, setLoadingUsers] =
+  const [loadingUsers, setLoadingUsers] =
 
-    useState(true);
+    useState(true);
 
 
 
-  const [usersError, setUsersError] =
+  const [usersError, setUsersError] =
 
-    useState('');
+    useState('');
 
 
 
-  const [loadingDetails, setLoadingDetails] =
+  const [loadingDetails, setLoadingDetails] =
 
-    useState(false);
+    useState(false);
 
 
 
-  const [detailsError, setDetailsError] =
+  const [detailsError, setDetailsError] =
 
-    useState('');
+    useState('');
 
 
 
-  const [savingProfile, setSavingProfile] =
+  const [savingProfile, setSavingProfile] =
 
-    useState(false);
+    useState(false);
 
 
 
-  const [profileError, setProfileError] =
+  const [profileError, setProfileError] =
 
-    useState('');
+    useState('');
 
 
 
-  const [profileSuccess, setProfileSuccess] =
+  const [profileSuccess, setProfileSuccess] =
 
-    useState('');
+    useState('');
 
 
 
-  const [changingStatus, setChangingStatus] =
+  const [changingStatus, setChangingStatus] =
 
-    useState(false);
+    useState(false);
 
 
 
-  const [showCreateForm, setShowCreateForm] =
+  const [showCreateForm, setShowCreateForm] =
 
-    useState(false);
+    useState(false);
 
 
 
-  const [createForm, setCreateForm] =
+  const [createForm, setCreateForm] =
 
-    useState({
+    useState({
 
-      full_name: '',
+      full_name: '',
 
-      email: '',
+      email: '',
 
-      password: '',
+      password: '',
 
-    });
+    });
 
 
 
-  const [createError, setCreateError] =
+  const [createError, setCreateError] =
 
-    useState('');
+    useState('');
 
 
 
-  const [createSuccess, setCreateSuccess] =
+  const [createSuccess, setCreateSuccess] =
 
-    useState('');
+    useState('');
 
 
 
-  const [creatingUser, setCreatingUser] =
+  const [creatingUser, setCreatingUser] =
 
-    useState(false);
+    useState(false);
 
 
 
-  const [availableRoles, setAvailableRoles] =
+  const [availableRoles, setAvailableRoles] =
 
-    useState<Role[]>([]);
+    useState<Role[]>([]);
 
 
 
-  const [loadingRoles, setLoadingRoles] =
+  const [loadingRoles, setLoadingRoles] =
 
-    useState(false);
+    useState(false);
 
 
 
-  const [rolesError, setRolesError] =
+  const [rolesError, setRolesError] =
 
-    useState('');
+    useState('');
 
 
 
-  const [selectedRoleCode, setSelectedRoleCode] =
+  const [selectedRoleCode, setSelectedRoleCode] =
 
-    useState('');
+    useState('');
 
 
 
-  const [assigningRole, setAssigningRole] =
+  const [assigningRole, setAssigningRole] =
 
-    useState(false);
+    useState(false);
 
 
 
-  const [removingRoleCode, setRemovingRoleCode] =
+  const [removingRoleCode, setRemovingRoleCode] =
 
-    useState<string | null>(null);
+    useState<string | null>(null);
 
 
 
-  const [roleError, setRoleError] =
+  const [roleError, setRoleError] =
 
-    useState('');
+    useState('');
 
 
 
-  const [roleSuccess, setRoleSuccess] =
+  const [roleSuccess, setRoleSuccess] =
 
-    useState('');
+    useState('');
 
 
 
-  const selectedUserIsCurrentUser =
+  const selectedUserIsCurrentUser =
 
-    selectedUser?.id === currentUser.id ||
+    selectedUser?.id === currentUser.id ||
 
-    selectedUserId === currentUser.id;
+    selectedUserId === currentUser.id;
 
 
 
-  const activeFilterValue =
+  const activeFilterValue =
 
-    activeFilter === 'all'
+    activeFilter === 'all'
 
-      ? undefined
+      ? undefined
 
-      : activeFilter === 'active';
+      : activeFilter === 'active';
 
 
 
-  const totalPages = Math.max(
+  const totalPages = Math.max(
 
-    1,
+    1,
 
-    Math.ceil(total / limit),
+    Math.ceil(total / limit),
 
-  );
+  );
 
 
 
-  const currentPage =
+  const currentPage =
 
-    Math.floor(offset / limit) + 1;
+    Math.floor(offset / limit) + 1;
 
 
 
-  const loadUsers = useCallback(async () => {
+  const loadUsers = useCallback(async () => {
 
-    setLoadingUsers(true);
+    setLoadingUsers(true);
 
-    setUsersError('');
+    setUsersError('');
 
 
 
-    try {
+    try {
 
-      const response =
+      const response =
 
-        await listManagedUsers({
+        await listManagedUsers({
 
-          search: search.trim() || undefined,
+          search: search.trim() || undefined,
 
-          is_active: activeFilterValue,
+          is_active: activeFilterValue,
 
-          offset,
+          offset,
 
-          limit,
+          limit,
 
-        });
+        });
 
 
 
-      setUsers(response.items);
+      setUsers(response.items);
 
-      setTotal(response.total);
+      setTotal(response.total);
 
-    } catch (requestError) {
+    } catch (requestError) {
 
-      setUsersError(
+      setUsersError(
 
-        requestError instanceof Error
+        requestError instanceof Error
 
-          ? requestError.message
+          ? requestError.message
 
-          : 'Unable to load users.',
+          : 'Unable to load users.',
 
-      );
+      );
 
-    } finally {
+    } finally {
 
-      setLoadingUsers(false);
+      setLoadingUsers(false);
 
-    }
+    }
 
-  }, [
+  }, [
 
-    activeFilterValue,
+    activeFilterValue,
 
-    offset,
+    offset,
 
-    search,
+    search,
 
-  ]);
+  ]);
 
 
 
-  const loadAvailableRoles = useCallback(async () => {
+  const loadAvailableRoles = useCallback(async () => {
 
-    setLoadingRoles(true);
+    setLoadingRoles(true);
 
-    setRolesError('');
+    setRolesError('');
 
 
 
-    try {
+    try {
 
-      const response = await listRoles();
+      const response = await listRoles();
 
-      setAvailableRoles(response);
+      setAvailableRoles(response);
 
-    } catch (requestError) {
+    } catch (requestError) {
 
-      setRolesError(
+      setRolesError(
 
-        requestError instanceof Error
+        requestError instanceof Error
 
-          ? requestError.message
+          ? requestError.message
 
-          : 'Unable to load available roles.',
+          : 'Unable to load available roles.',
 
-      );
+      );
 
-    } finally {
+    } finally {
 
-      setLoadingRoles(false);
+      setLoadingRoles(false);
 
-    }
+    }
 
-  }, []);
+  }, []);
 
 
 
-  const loadUserDetails = async (
+  const loadUserDetails = async (
 
-    userId: string,
+    userId: string,
 
-  ) => {
+  ) => {
 
-    setSelectedUserId(userId);
+    setSelectedUserId(userId);
 
-    setSelectedUser(null);
+    setSelectedUser(null);
 
-    setLoadingDetails(true);
+    setLoadingDetails(true);
 
-    setDetailsError('');
+    setDetailsError('');
 
-    setProfileError('');
+    setProfileError('');
 
-    setProfileSuccess('');
+    setProfileSuccess('');
 
-    setRoleError('');
+    setRoleError('');
 
-    setRoleSuccess('');
+    setRoleSuccess('');
 
-    setSelectedRoleCode('');
+    setSelectedRoleCode('');
 
 
 
-    try {
+    try {
 
-      const response =
+      const response =
 
-        await getManagedUser(userId);
+        await getManagedUser(userId);
 
 
 
-      setSelectedUser(response);
+      setSelectedUser(response);
 
-    } catch (requestError) {
+    } catch (requestError) {
 
-      setDetailsError(
+      setDetailsError(
 
-        requestError instanceof Error
+        requestError instanceof Error
 
-          ? requestError.message
+          ? requestError.message
 
-          : 'Unable to load user details.',
+          : 'Unable to load user details.',
 
-      );
+      );
 
-    } finally {
+    } finally {
 
-      setLoadingDetails(false);
+      setLoadingDetails(false);
 
-    }
+    }
 
-  };
+  };
 
 
 
-  useEffect(() => {
+  useEffect(() => {
 
-    const timer = window.setTimeout(() => {
+    const timer = window.setTimeout(() => {
 
-      void loadUsers();
+      void loadUsers();
 
-    }, 250);
+    }, 250);
 
 
 
-    return () => {
+    return () => {
 
-      window.clearTimeout(timer);
+      window.clearTimeout(timer);
 
-    };
+    };
 
-  }, [loadUsers]);
+  }, [loadUsers]);
 
 
 
-  useEffect(() => {
+  useEffect(() => {
 
-    void loadAvailableRoles();
+    void loadAvailableRoles();
 
-  }, [loadAvailableRoles]);
+  }, [loadAvailableRoles]);
 
 
 
-  const handleSearchChange = (
+  const handleSearchChange = (
 
-    value: string,
+    value: string,
 
-  ) => {
+  ) => {
 
-    setSearch(value);
+    setSearch(value);
 
-    setOffset(0);
+    setOffset(0);
 
-    setSelectedUserId(null);
+    setSelectedUserId(null);
 
-    setSelectedUser(null);
+    setSelectedUser(null);
 
-    setRoleError('');
+    setRoleError('');
 
-    setRoleSuccess('');
+    setRoleSuccess('');
 
-    setSelectedRoleCode('');
+    setSelectedRoleCode('');
 
-  };
+  };
 
 
 
-  const handleFilterChange = (
+  const handleFilterChange = (
 
-    value:
+    value:
 
-      | 'all'
+      | 'all'
 
-      | 'active'
+      | 'active'
 
-      | 'inactive',
+      | 'inactive',
 
-  ) => {
+  ) => {
 
-    setActiveFilter(value);
+    setActiveFilter(value);
 
-    setOffset(0);
+    setOffset(0);
 
-    setSelectedUserId(null);
+    setSelectedUserId(null);
 
-    setSelectedUser(null);
+    setSelectedUser(null);
 
-    setRoleError('');
+    setRoleError('');
 
-    setRoleSuccess('');
+    setRoleSuccess('');
 
-    setSelectedRoleCode('');
+    setSelectedRoleCode('');
 
-  };
+  };
 
 
 
-  const handleProfileSave = async (
+  const handleProfileSave = async (
 
-    event: FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
 
-    values: UpdateManagedUserRequest,
+    values: UpdateManagedUserRequest,
 
-  ) => {
+  ) => {
 
-    event.preventDefault();
+    event.preventDefault();
 
 
 
-    if (!selectedUser) {
+    if (!selectedUser) {
 
-      return;
+      return;
 
-    }
+    }
 
 
 
-    setSavingProfile(true);
+    setSavingProfile(true);
 
-    setProfileError('');
+    setProfileError('');
 
-    setProfileSuccess('');
+    setProfileSuccess('');
 
 
 
-    try {
+    try {
 
-      const updatedUser =
+      const updatedUser =
 
-        await updateManagedUser(
+        await updateManagedUser(
 
-          selectedUser.id,
+          selectedUser.id,
 
-          values,
+          values,
 
-        );
+        );
 
 
 
-      setSelectedUser((current) =>
+      setSelectedUser((current) =>
 
-        current
+        current
 
-          ? {
+          ? {
 
-              ...current,
+              ...current,
 
-              ...updatedUser,
+              ...updatedUser,
 
-            }
+            }
 
-          : current,
+          : current,
 
-      );
+      );
 
 
 
-      setUsers((currentUsers) =>
+      setUsers((currentUsers) =>
 
-        currentUsers.map((item) =>
+        currentUsers.map((item) =>
 
-          item.id === updatedUser.id
+          item.id === updatedUser.id
 
-            ? {
+            ? {
 
-                ...item,
+                ...item,
 
-                ...updatedUser,
+                ...updatedUser,
 
-              }
+              }
 
-            : item,
+            : item,
 
-        ),
+        ),
 
-      );
+      );
 
 
 
-      setProfileSuccess(
+      setProfileSuccess(
 
-        'User profile updated successfully.',
+        'User profile updated successfully.',
 
-      );
+      );
 
-    } catch (requestError) {
+    } catch (requestError) {
 
-      setProfileError(
+      setProfileError(
 
-        requestError instanceof Error
+        requestError instanceof Error
 
-          ? requestError.message
+          ? requestError.message
 
-          : 'Unable to update user profile.',
+          : 'Unable to update user profile.',
 
-      );
+      );
 
-    } finally {
+    } finally {
 
-      setSavingProfile(false);
+      setSavingProfile(false);
 
-    }
+    }
 
-  };
+  };
 
 
 
-  const handleStatusChange = async () => {
+  const handleStatusChange = async () => {
 
-    if (!selectedUser) {
+    if (!selectedUser) {
 
-      return;
+      return;
 
-    }
+    }
 
 
 
-    if (selectedUserIsCurrentUser) {
+    if (selectedUserIsCurrentUser) {
 
-      setProfileError(
+      setProfileError(
 
-        'You cannot change your own account status.',
+        'You cannot change your own account status.',
 
-      );
+      );
 
-      return;
+      return;
 
-    }
+    }
 
 
 
-    const nextStatus =
+    const nextStatus =
 
-      !selectedUser.is_active;
+      !selectedUser.is_active;
 
 
 
-    setChangingStatus(true);
+    setChangingStatus(true);
 
-    setProfileError('');
+    setProfileError('');
 
-    setProfileSuccess('');
+    setProfileSuccess('');
 
 
 
-    try {
+    try {
 
-      const updatedUser =
+      const updatedUser =
 
-        await updateManagedUserStatus(
+        await updateManagedUserStatus(
 
-          selectedUser.id,
+          selectedUser.id,
 
-          {
+          {
 
-            is_active: nextStatus,
+            is_active: nextStatus,
 
-          },
+          },
 
-        );
+        );
 
 
 
-      setSelectedUser((current) =>
+      setSelectedUser((current) =>
 
-        current
+        current
 
-          ? {
+          ? {
 
-              ...current,
+              ...current,
 
-              ...updatedUser,
+              ...updatedUser,
 
-            }
+            }
 
-          : current,
+          : current,
 
-      );
+      );
 
 
 
-      setUsers((currentUsers) =>
+      setUsers((currentUsers) =>
 
-        currentUsers.map((item) =>
+        currentUsers.map((item) =>
 
-          item.id === updatedUser.id
+          item.id === updatedUser.id
 
-            ? {
+            ? {
 
-                ...item,
+                ...item,
 
-                ...updatedUser,
+                ...updatedUser,
 
-              }
+              }
 
-            : item,
+            : item,
 
-        ),
+        ),
 
-      );
+      );
 
 
 
-      setProfileSuccess(
+      setProfileSuccess(
 
-        nextStatus
+        nextStatus
 
-          ? 'User account activated successfully.'
+          ? 'User account activated successfully.'
 
-          : 'User account deactivated successfully.',
+          : 'User account deactivated successfully.',
 
-      );
+      );
 
-    } catch (requestError) {
+    } catch (requestError) {
 
-      setProfileError(
+      setProfileError(
 
-        requestError instanceof Error
+        requestError instanceof Error
 
-          ? requestError.message
+          ? requestError.message
 
-          : 'Unable to change account status.',
+          : 'Unable to change account status.',
 
-      );
+      );
 
-    } finally {
+    } finally {
 
-      setChangingStatus(false);
+      setChangingStatus(false);
 
-    }
+    }
 
-  };
+  };
 
 
 
-  const handleAssignRole = async () => {
+  const handleAssignRole = async () => {
 
-    if (!selectedUser || !selectedRoleCode) {
+    if (!selectedUser || !selectedRoleCode) {
 
-      return;
+      return;
 
-    }
+    }
 
 
 
-    const roleAlreadyAssigned = selectedUser.roles.some(
+    const roleAlreadyAssigned = selectedUser.roles.some(
 
-      (role) => role.code === selectedRoleCode,
+      (role) => role.code === selectedRoleCode,
 
-    );
+    );
 
 
 
-    if (roleAlreadyAssigned) {
+    if (roleAlreadyAssigned) {
 
-      setRoleError('This role is already assigned to the user.');
+      setRoleError('This role is already assigned to the user.');
 
-      return;
+      return;
 
-    }
+    }
 
 
 
-    setAssigningRole(true);
+    setAssigningRole(true);
 
-    setRoleError('');
+    setRoleError('');
 
-    setRoleSuccess('');
+    setRoleSuccess('');
 
 
 
-    try {
+    try {
 
-      await assignUserRole(selectedUser.id, {
+      await assignUserRole(selectedUser.id, {
 
-        role_code: selectedRoleCode,
+        role_code: selectedRoleCode,
 
-      });
+      });
 
 
 
-      const refreshedUser =
+      const refreshedUser =
 
-        await getManagedUser(selectedUser.id);
+        await getManagedUser(selectedUser.id);
 
 
 
-      setSelectedUser(refreshedUser);
+      setSelectedUser(refreshedUser);
 
-      setSelectedRoleCode('');
+      setSelectedRoleCode('');
 
-      setRoleSuccess('Role assigned successfully.');
+      setRoleSuccess('Role assigned successfully.');
 
-    } catch (requestError) {
+    } catch (requestError) {
 
-      setRoleError(
+      setRoleError(
 
-        requestError instanceof Error
+        requestError instanceof Error
 
-          ? requestError.message
+          ? requestError.message
 
-          : 'Unable to assign the selected role.',
+          : 'Unable to assign the selected role.',
 
-      );
+      );
 
-    } finally {
+    } finally {
 
-      setAssigningRole(false);
+      setAssigningRole(false);
 
-    }
+    }
 
-  };
+  };
 
 
 
-  const handleRemoveRole = async (
+  const handleRemoveRole = async (
 
-    roleCode: string,
+    roleCode: string,
 
-  ) => {
+  ) => {
 
-    if (!selectedUser) {
+    if (!selectedUser) {
 
-      return;
+      return;
 
-    }
+    }
 
 
 
-    setRemovingRoleCode(roleCode);
+    setRemovingRoleCode(roleCode);
 
-    setRoleError('');
+    setRoleError('');
 
-    setRoleSuccess('');
+    setRoleSuccess('');
 
 
 
-    try {
+    try {
 
-      await removeUserRole(
+      await removeUserRole(
 
-        selectedUser.id,
+        selectedUser.id,
 
-        roleCode,
+        roleCode,
 
-      );
+      );
 
 
 
-      const refreshedUser =
+      const refreshedUser =
 
-        await getManagedUser(selectedUser.id);
+        await getManagedUser(selectedUser.id);
 
 
 
-      setSelectedUser(refreshedUser);
+      setSelectedUser(refreshedUser);
 
-      setRoleSuccess('Role removed successfully.');
+      setRoleSuccess('Role removed successfully.');
 
-    } catch (requestError) {
+    } catch (requestError) {
 
-      setRoleError(
+      setRoleError(
 
-        requestError instanceof Error
+        requestError instanceof Error
 
-          ? requestError.message
+          ? requestError.message
 
-          : 'Unable to remove the selected role.',
+          : 'Unable to remove the selected role.',
 
-      );
+      );
 
-    } finally {
+    } finally {
 
-      setRemovingRoleCode(null);
+      setRemovingRoleCode(null);
 
-    }
+    }
 
-  };
+  };
 
 
 
-  const assignableRoles = availableRoles.filter(
+  const assignableRoles = availableRoles.filter(
 
-    (role) =>
+    (role) =>
 
-      !selectedUser?.roles.some(
+      !selectedUser?.roles.some(
 
-        (assignedRole) =>
+        (assignedRole) =>
 
-          assignedRole.code === role.code,
+          assignedRole.code === role.code,
 
-      ),
+      ),
 
-  );
+  );
 
 
 
-  const handleCreateUser = async (
+  const handleCreateUser = async (
 
-    event: FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
 
-  ) => {
+  ) => {
 
-    event.preventDefault();
+    event.preventDefault();
 
 
 
-    setCreatingUser(true);
+    setCreatingUser(true);
 
-    setCreateError('');
+    setCreateError('');
 
-    setCreateSuccess('');
+    setCreateSuccess('');
 
 
 
-    try {
+    try {
 
-      await createManagedUser(createForm);
+      await createManagedUser(createForm);
 
 
 
-      setCreateForm({
+      setCreateForm({
 
-        full_name: '',
+        full_name: '',
 
-        email: '',
+        email: '',
 
-        password: '',
+        password: '',
 
-      });
+      });
 
 
 
-      setCreateSuccess(
+      setCreateSuccess(
 
-        'User account created successfully.',
+        'User account created successfully.',
 
-      );
+      );
 
 
 
-      setShowCreateForm(false);
+      setShowCreateForm(false);
 
-      setOffset(0);
+      setOffset(0);
 
 
 
-      await loadUsers();
+      await loadUsers();
 
-    } catch (requestError) {
+    } catch (requestError) {
 
-      setCreateError(
+      setCreateError(
 
-        requestError instanceof Error
+        requestError instanceof Error
 
-          ? requestError.message
+          ? requestError.message
 
-          : 'Unable to create the user account.',
+          : 'Unable to create the user account.',
 
-      );
+      );
 
-    } finally {
+    } finally {
 
-      setCreatingUser(false);
+      setCreatingUser(false);
 
-    }
+    }
 
-  };
+  };
 
 
 
-  return (
+  return (
 
-    <section className="management-shell">
+    <section className="management-shell">
 
-      <div className="management-heading">
+      <div className="management-heading">
 
-        <div>
+        <div>
 
-          <p className="roles-eyebrow">
+          <p className="roles-eyebrow">
 
-            IDENTITY & ADMINISTRATION
+            IDENTITY & ADMINISTRATION
 
-          </p>
+          </p>
 
 
 
-          <h1>User Management</h1>
+          <h1>User Management</h1>
 
 
 
-          <p>
+          <p>
 
-            Manage AAKAR platform accounts,
+            Manage AAKAR platform accounts,
 
-            account status, and user profile
+            account status, and user profile
 
-            information.
+            information.
 
-          </p>
+          </p>
 
-        </div>
+        </div>
 
 
 
-        <div className="management-actions">
+        <div className="management-actions">
 
-          <button
+          <button
 
-            type="button"
+            type="button"
 
-            className="secondary-button"
+            className="secondary-button"
 
-            onClick={() => {
+            onClick={() => {
 
-              setShowCreateForm(
+              setShowCreateForm(
 
-                (current) => !current,
+                (current) => !current,
 
-              );
+              );
 
 
 
-              setCreateError('');
+              setCreateError('');
 
-              setCreateSuccess('');
+              setCreateSuccess('');
 
-            }}
+            }}
 
-          >
+          >
 
-            {showCreateForm
+            {showCreateForm
 
-              ? 'Close form'
+              ? 'Close form'
 
-              : 'Create user'}
+              : 'Create user'}
 
-          </button>
+          </button>
 
-        </div>
+        </div>
 
-      </div>
+      </div>
 
 
 
-      {createSuccess &&
+      {createSuccess &&
 
-        !showCreateForm && (
+        !showCreateForm && (
 
-          <div
+          <div
 
-            className="success-message"
+            className="success-message"
 
-            role="status"
+            role="status"
 
-          >
+          >
 
-            {createSuccess}
+            {createSuccess}
 
-          </div>
+          </div>
 
-        )}
+        )}
 
 
 
-      {showCreateForm && (
+      {showCreateForm && (
 
-        <form
+        <form
 
-          className="management-form-card"
+          className="management-form-card"
 
-          onSubmit={handleCreateUser}
+          onSubmit={handleCreateUser}
 
-        >
+        >
 
-          <div className="management-card-heading">
+          <div className="management-card-heading">
 
-            <div>
+            <div>
 
-              <p className="roles-eyebrow">
+              <p className="roles-eyebrow">
 
-                NEW ACCOUNT
+                NEW ACCOUNT
 
-              </p>
+              </p>
 
 
 
-              <h2>Create user</h2>
+              <h2>Create user</h2>
 
-            </div>
+            </div>
 
-          </div>
+          </div>
 
 
 
-          <div className="management-form-grid">
+          <div className="management-form-grid">
 
-            <label>
+            <label>
 
-              Full name
+              Full name
 
 
 
-              <input
+              <input
 
-                type="text"
+                type="text"
 
-                value={createForm.full_name}
+                value={createForm.full_name}
 
-                onChange={(event) =>
+                onChange={(event) =>
 
-                  setCreateForm((current) => ({
+                  setCreateForm((current) => ({
 
-                    ...current,
+                    ...current,
 
-                    full_name:
+                    full_name:
 
-                      event.target.value,
+                      event.target.value,
 
-                  }))
+                  }))
 
-                }
+                }
 
-                minLength={2}
+                minLength={2}
 
-                maxLength={150}
+                maxLength={150}
 
-                required
+                required
 
-              />
+              />
 
-            </label>
+            </label>
 
 
 
-            <label>
+            <label>
 
-              Email address
+              Email address
 
 
 
-              <input
+              <input
 
-                type="email"
+                type="email"
 
-                value={createForm.email}
+                value={createForm.email}
 
-                onChange={(event) =>
+                onChange={(event) =>
 
-                  setCreateForm((current) => ({
+                  setCreateForm((current) => ({
 
-                    ...current,
+                    ...current,
 
-                    email:
+                    email:
 
-                      event.target.value,
+                      event.target.value,
 
-                  }))
+                  }))
 
-                }
+                }
 
-                maxLength={320}
+                maxLength={320}
 
-                required
+                required
 
-              />
+              />
 
-            </label>
+            </label>
 
 
 
-            <label>
+            <label>
 
-              Temporary password
+              Temporary password
 
 
 
-              <input
+              <input
 
-                type="password"
+                type="password"
 
-                value={createForm.password}
+                value={createForm.password}
 
-                onChange={(event) =>
+                onChange={(event) =>
 
-                  setCreateForm((current) => ({
+                  setCreateForm((current) => ({
 
-                    ...current,
+                    ...current,
 
-                    password:
+                    password:
 
-                      event.target.value,
+                      event.target.value,
 
-                  }))
+                  }))
 
-                }
+                }
 
-                minLength={8}
+                minLength={8}
 
-                maxLength={128}
+                maxLength={128}
 
-                required
+                required
 
-              />
+              />
 
-            </label>
+            </label>
 
-          </div>
+          </div>
 
 
 
-          {createError && (
+          {createError && (
 
-            <div
+            <div
 
-              className="error-message"
+              className="error-message"
 
-              role="alert"
+              role="alert"
 
-            >
+            >
 
-              {createError}
+              {createError}
 
-            </div>
+            </div>
 
-          )}
+          )}
 
 
 
-          <div className="management-form-actions">
+          <div className="management-form-actions">
 
-            <button
+            <button
 
-              type="submit"
+              type="submit"
 
-              className="primary-button"
+              className="primary-button"
 
-              disabled={creatingUser}
+              disabled={creatingUser}
 
-            >
+            >
 
-              {creatingUser
+              {creatingUser
 
-                ? 'Creating user...'
+                ? 'Creating user...'
 
-                : 'Create user'}
+                : 'Create user'}
 
-            </button>
+            </button>
 
-          </div>
+          </div>
 
-        </form>
+        </form>
 
-      )}
+      )}
 
 
 
-      <div className="management-layout">
+      <div className="management-layout">
 
-        <section className="users-panel">
+        <section className="users-panel">
 
-          <div className="users-toolbar">
+          <div className="users-toolbar">
 
-            <div className="search-field">
+            <div className="search-field">
 
-              <label htmlFor="user-search">
+              <label htmlFor="user-search">
 
-                Search users
+                Search users
 
-              </label>
+              </label>
 
 
 
-              <input
+              <input
 
-                id="user-search"
+                id="user-search"
 
-                type="search"
+                type="search"
 
-                placeholder="Search by name or email..."
+                placeholder="Search by name or email..."
 
-                value={search}
+                value={search}
 
-                onChange={(event) =>
+                onChange={(event) =>
 
-                  handleSearchChange(
+                  handleSearchChange(
 
-                    event.target.value,
+                    event.target.value,
 
-                  )
+                  )
 
-                }
+                }
 
-              />
+              />
 
-            </div>
+            </div>
 
 
 
-            <div className="filter-field">
+            <div className="filter-field">
 
-              <label htmlFor="user-status-filter">
+              <label htmlFor="user-status-filter">
 
-                Status
+                Status
 
-              </label>
+              </label>
 
 
 
-              <select
+              <select
 
-                id="user-status-filter"
+                id="user-status-filter"
 
-                value={activeFilter}
+                value={activeFilter}
 
-                onChange={(event) =>
+                onChange={(event) =>
 
-                  handleFilterChange(
+                  handleFilterChange(
 
-                    event.target.value as
+                    event.target.value as
 
-                      | 'all'
+                      | 'all'
 
-                      | 'active'
+                      | 'active'
 
-                      | 'inactive',
+                      | 'inactive',
 
-                  )
+                  )
 
-                }
+                }
 
-              >
+              >
 
-                <option value="all">
+                <option value="all">
 
-                  All accounts
+                  All accounts
 
-                </option>
+                </option>
 
 
 
-                <option value="active">
+                <option value="active">
 
-                  Active
+                  Active
 
-                </option>
+                </option>
 
 
 
-                <option value="inactive">
+                <option value="inactive">
 
-                  Inactive
+                  Inactive
 
-                </option>
+                </option>
 
-              </select>
+              </select>
 
-            </div>
+            </div>
 
-          </div>
+          </div>
 
 
 
-          {usersError && (
+          {usersError && (
 
-            <div
+            <div
 
-              className="error-message"
+              className="error-message"
 
-              role="alert"
+              role="alert"
 
-            >
+            >
 
-              {usersError}
+              {usersError}
 
-            </div>
+            </div>
 
-          )}
+          )}
 
 
 
-          <div className="users-summary">
+          <div className="users-summary">
 
-            <span>
+            <span>
 
-              {total}{' '}
+              {total}{' '}
 
-              {total === 1
+              {total === 1
 
-                ? 'account'
+                ? 'account'
 
-                : 'accounts'}
+                : 'accounts'}
 
-            </span>
+            </span>
 
 
 
-            <span>
+            <span>
 
-              Page {currentPage} of{' '}
+              Page {currentPage} of{' '}
 
-              {totalPages}
+              {totalPages}
 
-            </span>
+            </span>
 
-          </div>
+          </div>
 
 
 
-          {loadingUsers ? (
+          {loadingUsers ? (
 
-            <div className="management-empty-state">
+            <div className="management-empty-state">
 
-              <strong>
+              <strong>
 
-                Loading users...
+                Loading users...
 
-              </strong>
+              </strong>
 
 
 
-              <p>
+              <p>
 
-                Retrieving accounts from the
+                Retrieving accounts from the
 
-                secure AAKAR API.
+                secure AAKAR API.
 
-              </p>
+              </p>
 
-            </div>
+            </div>
 
-          ) : users.length === 0 ? (
+          ) : users.length === 0 ? (
 
-            <div className="management-empty-state">
+            <div className="management-empty-state">
 
-              <strong>
+              <strong>
 
-                No users found
+                No users found
 
-              </strong>
+              </strong>
 
 
 
-              <p>
+              <p>
 
-                Try adjusting the search text or
+                Try adjusting the search text or
 
-                account-status filter.
+                account-status filter.
 
-              </p>
+              </p>
 
-            </div>
+            </div>
 
-          ) : (
+          ) : (
 
-            <div className="user-list">
+            <div className="user-list">
 
-              {users.map((managedUser) => {
+              {users.map((managedUser) => {
 
-                const isSelected =
+                const isSelected =
 
-                  managedUser.id ===
+                  managedUser.id ===
 
-                  selectedUserId;
+                  selectedUserId;
 
 
 
-                const isCurrent =
+                const isCurrent =
 
-                  managedUser.id ===
+                  managedUser.id ===
 
-                  currentUser.id;
+                  currentUser.id;
 
 
 
-                return (
+                return (
 
-                  <button
+                  <button
 
-                    type="button"
+                    type="button"
 
-                    key={managedUser.id}
+                    key={managedUser.id}
 
-                    className={
+                    className={
 
-                      isSelected
+                      isSelected
 
-                        ? 'user-list-item user-list-item-active'
+                        ? 'user-list-item user-list-item-active'
 
-                        : 'user-list-item'
+                        : 'user-list-item'
 
-                    }
+                    }
 
-                    onClick={() => {
+                    onClick={() => {
 
-                      void loadUserDetails(
+                      void loadUserDetails(
 
-                        managedUser.id,
+                        managedUser.id,
 
-                      );
+                      );
 
-                    }}
+                    }}
 
-                  >
+                  >
 
-                    <div className="user-list-main">
+                    <div className="user-list-main">
 
-                      <strong>
+                      <strong>
 
-                        {managedUser.full_name}
+                        {managedUser.full_name}
 
-                      </strong>
+                      </strong>
 
 
 
-                      <span>
+                      <span>
 
-                        {managedUser.email}
+                        {managedUser.email}
 
-                      </span>
+                      </span>
 
-                    </div>
+                    </div>
 
 
 
-                    <div className="user-list-meta">
+                    <div className="user-list-meta">
 
-                      <span
+                      <span
 
-                        className={
+                        className={
 
-                          managedUser.is_active
+                          managedUser.is_active
 
-                            ? 'user-status user-status-active'
+                            ? 'user-status user-status-active'
 
-                            : 'user-status user-status-inactive'
+                            : 'user-status user-status-inactive'
 
-                        }
+                        }
 
-                      >
+                      >
 
-                        {managedUser.is_active
+                        {managedUser.is_active
 
-                          ? 'Active'
+                          ? 'Active'
 
-                          : 'Inactive'}
+                          : 'Inactive'}
 
-                      </span>
+                      </span>
 
 
 
-                      {isCurrent && (
+                      {isCurrent && (
 
-                        <span className="current-user-badge">
+                        <span className="current-user-badge">
 
-                          You
+                          You
 
-                        </span>
+                        </span>
 
-                      )}
+                      )}
 
-                    </div>
+                    </div>
 
-                  </button>
+                  </button>
 
-                );
+                );
 
-              })}
+              })}
 
-            </div>
+            </div>
 
-          )}
+          )}
 
 
 
-          <div className="pagination-controls">
+          <div className="pagination-controls">
 
-            <button
+            <button
 
-              type="button"
+              type="button"
 
-              className="ghost-button"
+              className="ghost-button"
 
-              disabled={
+              disabled={
 
-                offset === 0 ||
+                offset === 0 ||
 
-                loadingUsers
+                loadingUsers
 
-              }
+              }
 
-              onClick={() =>
+              onClick={() =>
 
-                setOffset(
+                setOffset(
 
-                  (currentOffset) =>
+                  (currentOffset) =>
 
-                    Math.max(
+                    Math.max(
 
-                      0,
+                      0,
 
-                      currentOffset - limit,
+                      currentOffset - limit,
 
-                    ),
+                    ),
 
-                )
+                )
 
-              }
+              }
 
-            >
+            >
 
-              Previous
+              Previous
 
-            </button>
+            </button>
 
 
 
-            <span>
+            <span>
 
-              {currentPage} / {totalPages}
+              {currentPage} / {totalPages}
 
-            </span>
+            </span>
 
 
 
-            <button
+            <button
 
-              type="button"
+              type="button"
 
-              className="ghost-button"
+              className="ghost-button"
 
-              disabled={
+              disabled={
 
-                offset + limit >= total ||
+                offset + limit >= total ||
 
-                loadingUsers ||
+                loadingUsers ||
 
-                total === 0
+                total === 0
 
-              }
+              }
 
-              onClick={() =>
+              onClick={() =>
 
-                setOffset(
+                setOffset(
 
-                  (currentOffset) =>
+                  (currentOffset) =>
 
-                    currentOffset + limit,
+                    currentOffset + limit,
 
-                )
+                )
 
-              }
+              }
 
-            >
+            >
 
-              Next
+              Next
 
-            </button>
+            </button>
 
-          </div>
+          </div>
 
-        </section>
+        </section>
 
 
 
-        <section className="user-detail-panel">
+        <section className="user-detail-panel">
 
-          {loadingDetails && (
+          {loadingDetails && (
 
-            <div className="management-empty-state">
+            <div className="management-empty-state">
 
-              <strong>
+              <strong>
 
-                Loading user details...
+                Loading user details...
 
-              </strong>
+              </strong>
 
 
 
-              <p>
+              <p>
 
-                Fetching the selected account
+                Fetching the selected account
 
-                and assigned roles.
+                and assigned roles.
 
-              </p>
+              </p>
 
-            </div>
+            </div>
 
-          )}
+          )}
 
 
 
-          {!loadingDetails &&
+          {!loadingDetails &&
 
-            detailsError && (
+            detailsError && (
 
-              <div
+              <div
 
-                className="error-message"
+                className="error-message"
 
-                role="alert"
+                role="alert"
 
-              >
+              >
 
-                {detailsError}
+                {detailsError}
 
-              </div>
+              </div>
 
-            )}
+            )}
 
 
 
-          {!loadingDetails &&
+          {!loadingDetails &&
 
-            !detailsError &&
+            !detailsError &&
 
-            !selectedUser && (
+            !selectedUser && (
 
-              <div className="management-empty-state management-empty-state-large">
+              <div className="management-empty-state management-empty-state-large">
 
-                <span className="detail-placeholder-icon">
+                <span className="detail-placeholder-icon">
 
-                  आ
+                  आ
 
-                </span>
+                </span>
 
 
 
-                <strong>
+                <strong>
 
-                  Select an account
+                  Select an account
 
-                </strong>
+                </strong>
 
 
 
-                <p>
+                <p>
 
-                  Choose a user from the list to
+                  Choose a user from the list to
 
-                  inspect profile information,
+                  inspect profile information,
 
-                  account status, and assigned
+                  account status, and assigned
 
-                  roles.
+                  roles.
 
-                </p>
+                </p>
 
-              </div>
+              </div>
 
-            )}
+            )}
 
 
 
-          {!loadingDetails &&
+          {!loadingDetails &&
 
-            !detailsError &&
+            !detailsError &&
 
-            selectedUser && (
+            selectedUser && (
 
-              <UserDetailPanel
+              <UserDetailPanel
 
-                user={selectedUser}
+                user={selectedUser}
 
-                isCurrentUser={
+                isCurrentUser={
 
-                  selectedUserIsCurrentUser
+                  selectedUserIsCurrentUser
 
-                }
+                }
 
-                savingProfile={
+                savingProfile={
 
-                  savingProfile
+                  savingProfile
 
-                }
+                }
 
-                changingStatus={
+                changingStatus={
 
-                  changingStatus
+                  changingStatus
 
-                }
+                }
 
-                profileError={profileError}
+                profileError={profileError}
 
-                profileSuccess={
+                profileSuccess={
 
-                  profileSuccess
+                  profileSuccess
 
-                }
+                }
 
-                availableRoles={assignableRoles}
+                availableRoles={assignableRoles}
 
-                loadingRoles={loadingRoles}
+                loadingRoles={loadingRoles}
 
-                rolesError={rolesError}
+                rolesError={rolesError}
 
-                selectedRoleCode={selectedRoleCode}
+                selectedRoleCode={selectedRoleCode}
 
-                assigningRole={assigningRole}
+                assigningRole={assigningRole}
 
-                removingRoleCode={removingRoleCode}
+                removingRoleCode={removingRoleCode}
 
-                roleError={roleError}
+                roleError={roleError}
 
-                roleSuccess={roleSuccess}
+                roleSuccess={roleSuccess}
 
-                onRoleCodeChange={setSelectedRoleCode}
+                onRoleCodeChange={setSelectedRoleCode}
 
-                onAssignRole={() => {
+                onAssignRole={() => {
 
-                  void handleAssignRole();
+                  void handleAssignRole();
 
-                }}
+                }}
 
-                onRemoveRole={(roleCode) => {
+                onRemoveRole={(roleCode) => {
 
-                  void handleRemoveRole(roleCode);
+                  void handleRemoveRole(roleCode);
 
-                }}
+                }}
 
-                onSave={handleProfileSave}
+                onSave={handleProfileSave}
 
-                onStatusChange={() => {
+                onStatusChange={() => {
 
-                  void handleStatusChange();
+                  void handleStatusChange();
 
-                }}
+                }}
 
-              />
+              />
 
-            )}
+            )}
 
-        </section>
+        </section>
 
-      </div>
+      </div>
 
-    </section>
+    </section>
 
-  );
+  );
 
 }
 
@@ -3500,49 +3525,49 @@ function UserManagementWorkspace({
 
 interface UserDetailPanelProps {
 
-  user: ManagedUserDetail;
+  user: ManagedUserDetail;
 
-  isCurrentUser: boolean;
+  isCurrentUser: boolean;
 
-  savingProfile: boolean;
+  savingProfile: boolean;
 
-  changingStatus: boolean;
+  changingStatus: boolean;
 
-  profileError: string;
+  profileError: string;
 
-  profileSuccess: string;
+  profileSuccess: string;
 
-  availableRoles: Role[];
+  availableRoles: Role[];
 
-  loadingRoles: boolean;
+  loadingRoles: boolean;
 
-  rolesError: string;
+  rolesError: string;
 
-  selectedRoleCode: string;
+  selectedRoleCode: string;
 
-  assigningRole: boolean;
+  assigningRole: boolean;
 
-  removingRoleCode: string | null;
+  removingRoleCode: string | null;
 
-  roleError: string;
+  roleError: string;
 
-  roleSuccess: string;
+  roleSuccess: string;
 
-  onRoleCodeChange: (roleCode: string) => void;
+  onRoleCodeChange: (roleCode: string) => void;
 
-  onAssignRole: () => void;
+  onAssignRole: () => void;
 
-  onRemoveRole: (roleCode: string) => void;
+  onRemoveRole: (roleCode: string) => void;
 
-  onSave: (
+  onSave: (
 
-    event: FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
 
-    values: UpdateManagedUserRequest,
+    values: UpdateManagedUserRequest,
 
-  ) => Promise<void>;
+  ) => Promise<void>;
 
-  onStatusChange: () => void;
+  onStatusChange: () => void;
 
 }
 
@@ -3550,757 +3575,757 @@ interface UserDetailPanelProps {
 
 function UserDetailPanel({
 
-  user,
+  user,
 
-  isCurrentUser,
+  isCurrentUser,
 
-  savingProfile,
+  savingProfile,
 
-  changingStatus,
+  changingStatus,
 
-  profileError,
+  profileError,
 
-  profileSuccess,
+  profileSuccess,
 
-  availableRoles,
+  availableRoles,
 
-  loadingRoles,
+  loadingRoles,
 
-  rolesError,
+  rolesError,
 
-  selectedRoleCode,
+  selectedRoleCode,
 
-  assigningRole,
+  assigningRole,
 
-  removingRoleCode,
+  removingRoleCode,
 
-  roleError,
+  roleError,
 
-  roleSuccess,
+  roleSuccess,
 
-  onRoleCodeChange,
+  onRoleCodeChange,
 
-  onAssignRole,
+  onAssignRole,
 
-  onRemoveRole,
+  onRemoveRole,
 
-  onSave,
+  onSave,
 
-  onStatusChange,
+  onStatusChange,
 
 }: UserDetailPanelProps) {
 
-  const [fullName, setFullName] =
+  const [fullName, setFullName] =
 
-    useState(user.full_name);
+    useState(user.full_name);
 
 
 
-  const [email, setEmail] =
+  const [email, setEmail] =
 
-    useState(user.email);
+    useState(user.email);
 
 
 
-  return (
+  return (
 
-    <div className="detail-card">
+    <div className="detail-card">
 
-      <div className="detail-card-heading">
+      <div className="detail-card-heading">
 
-        <div>
+        <div>
 
-          <p className="roles-eyebrow">
+          <p className="roles-eyebrow">
 
-            ACCOUNT DETAILS
+            ACCOUNT DETAILS
 
-          </p>
+          </p>
 
 
 
-          <h2>{user.full_name}</h2>
+          <h2>{user.full_name}</h2>
 
 
 
-          <span>{user.email}</span>
+          <span>{user.email}</span>
 
-        </div>
+        </div>
 
 
 
-        <span
+        <span
 
-          className={
+          className={
 
-            user.is_active
+            user.is_active
 
-              ? 'user-status user-status-active'
+              ? 'user-status user-status-active'
 
-              : 'user-status user-status-inactive'
+              : 'user-status user-status-inactive'
 
-          }
+          }
 
-        >
+        >
 
-          {user.is_active
+          {user.is_active
 
-            ? 'Active'
+            ? 'Active'
 
-            : 'Inactive'}
+            : 'Inactive'}
 
-        </span>
+        </span>
 
-      </div>
+      </div>
 
 
 
-      {profileError && (
+      {profileError && (
 
-        <div
+        <div
 
-          className="error-message"
+          className="error-message"
 
-          role="alert"
+          role="alert"
 
-        >
+        >
 
-          {profileError}
+          {profileError}
 
-        </div>
+        </div>
 
-      )}
+      )}
 
 
 
-      {profileSuccess && (
+      {profileSuccess && (
 
-        <div
+        <div
 
-          className="success-message"
+          className="success-message"
 
-          role="status"
+          role="status"
 
-        >
+        >
 
-          {profileSuccess}
+          {profileSuccess}
 
-        </div>
+        </div>
 
-      )}
+      )}
 
 
 
-      <form
+      <form
 
-        className="detail-form"
+        className="detail-form"
 
-        onSubmit={(event) =>
+        onSubmit={(event) =>
 
-          void onSave(event, {
+          void onSave(event, {
 
-            full_name: fullName,
+            full_name: fullName,
 
-            email,
+            email,
 
-          })
+          })
 
-        }
+        }
 
-      >
+      >
 
-        <label>
+        <label>
 
-          Full name
+          Full name
 
 
 
-          <input
+          <input
 
-            type="text"
+            type="text"
 
-            value={fullName}
+            value={fullName}
 
-            onChange={(event) =>
+            onChange={(event) =>
 
-              setFullName(
+              setFullName(
 
-                event.target.value,
+                event.target.value,
 
-              )
+              )
 
-            }
+            }
 
-            minLength={2}
+            minLength={2}
 
-            maxLength={150}
+            maxLength={150}
 
-            required
+            required
 
-          />
+          />
 
-        </label>
+        </label>
 
 
 
-        <label>
+        <label>
 
-          Email address
+          Email address
 
 
 
-          <input
+          <input
 
-            type="email"
+            type="email"
 
-            value={email}
+            value={email}
 
-            onChange={(event) =>
+            onChange={(event) =>
 
-              setEmail(event.target.value)
+              setEmail(event.target.value)
 
-            }
+            }
 
-            maxLength={320}
+            maxLength={320}
 
-            required
+            required
 
-          />
+          />
 
-        </label>
+        </label>
 
 
 
-        <div className="detail-form-actions">
+        <div className="detail-form-actions">
 
-          <button
+          <button
 
-            type="submit"
+            type="submit"
 
-            className="primary-button"
+            className="primary-button"
 
-            disabled={savingProfile}
+            disabled={savingProfile}
 
-          >
+          >
 
-            {savingProfile
+            {savingProfile
 
-              ? 'Saving...'
+              ? 'Saving...'
 
-              : 'Save changes'}
+              : 'Save changes'}
 
-          </button>
+          </button>
 
 
 
-          <button
+          <button
 
-            type="button"
+            type="button"
 
-            className="secondary-button"
+            className="secondary-button"
 
-            disabled={
+            disabled={
 
-              changingStatus ||
+              changingStatus ||
 
-              isCurrentUser
+              isCurrentUser
 
-            }
+            }
 
-            onClick={onStatusChange}
+            onClick={onStatusChange}
 
-          >
+          >
 
-            {changingStatus
+            {changingStatus
 
-              ? 'Updating...'
+              ? 'Updating...'
 
-              : user.is_active
+              : user.is_active
 
-                ? 'Deactivate account'
+                ? 'Deactivate account'
 
-                : 'Activate account'}
+                : 'Activate account'}
 
-          </button>
+          </button>
 
-        </div>
+        </div>
 
-      </form>
+      </form>
 
 
 
-      <div className="account-meta-grid">
+      <div className="account-meta-grid">
 
-        <div className="profile-item">
+        <div className="profile-item">
 
-          <span>
+          <span>
 
-            Email verification
+            Email verification
 
-          </span>
+          </span>
 
 
 
-          <strong>
+          <strong>
 
-            {user.is_email_verified
+            {user.is_email_verified
 
-              ? 'Verified'
+              ? 'Verified'
 
-              : 'Not verified'}
+              : 'Not verified'}
 
-          </strong>
+          </strong>
 
-        </div>
+        </div>
 
 
 
-        <div className="profile-item">
+        <div className="profile-item">
 
-          <span>Last login</span>
+          <span>Last login</span>
 
 
 
-          <strong>
+          <strong>
 
-            {formatDateTime(
+            {formatDateTime(
 
-              user.last_login_at,
+              user.last_login_at,
 
-            )}
+            )}
 
-          </strong>
+          </strong>
 
-        </div>
+        </div>
 
 
 
-        <div className="profile-item">
+        <div className="profile-item">
 
-          <span>Created</span>
+          <span>Created</span>
 
 
 
-          <strong>
+          <strong>
 
-            {formatDateTime(
+            {formatDateTime(
 
-              user.created_at,
+              user.created_at,
 
-            )}
+            )}
 
-          </strong>
+          </strong>
 
-        </div>
+        </div>
 
 
 
-        <div className="profile-item">
+        <div className="profile-item">
 
-          <span>Updated</span>
+          <span>Updated</span>
 
 
 
-          <strong>
+          <strong>
 
-            {formatDateTime(
+            {formatDateTime(
 
-              user.updated_at,
+              user.updated_at,
 
-            )}
+            )}
 
-          </strong>
+          </strong>
 
-        </div>
+        </div>
 
-      </div>
+      </div>
 
 
 
-      <section className="assigned-role-panel">
+      <section className="assigned-role-panel">
 
-        <div className="roles-heading">
+        <div className="roles-heading">
 
-          <div>
+          <div>
 
-            <p className="roles-eyebrow">
+            <p className="roles-eyebrow">
 
-              ACCESS CONTROL
+              ACCESS CONTROL
 
-            </p>
+            </p>
 
 
 
-            <h3>Assigned roles</h3>
+            <h3>Assigned roles</h3>
 
-          </div>
+          </div>
 
 
 
-          <span className="role-count">
+          <span className="role-count">
 
-            {user.roles.length}{' '}
+            {user.roles.length}{' '}
 
-            {user.roles.length === 1
+            {user.roles.length === 1
 
-              ? 'role'
+              ? 'role'
 
-              : 'roles'}
+              : 'roles'}
 
-          </span>
+          </span>
 
-        </div>
+        </div>
 
 
 
-        {roleError && (
+        {roleError && (
 
-          <div
+          <div
 
-            className="error-message"
+            className="error-message"
 
-            role="alert"
+            role="alert"
 
-          >
+          >
 
-            {roleError}
+            {roleError}
 
-          </div>
+          </div>
 
-        )}
+        )}
 
 
 
-        {roleSuccess && (
+        {roleSuccess && (
 
-          <div
+          <div
 
-            className="success-message"
+            className="success-message"
 
-            role="status"
+            role="status"
 
-          >
+          >
 
-            {roleSuccess}
+            {roleSuccess}
 
-          </div>
+          </div>
 
-        )}
+        )}
 
 
 
-        <div className="role-assignment-panel">
+        <div className="role-assignment-panel">
 
-          <div>
+          <div>
 
-            <p className="role-assignment-label">
+            <p className="role-assignment-label">
 
-              ASSIGN ROLE
+              ASSIGN ROLE
 
-            </p>
+            </p>
 
 
 
-            <p className="role-assignment-help">
+            <p className="role-assignment-help">
 
-              Select an active AAKAR role to grant
+              Select an active AAKAR role to grant
 
-              this account access.
+              this account access.
 
-            </p>
+            </p>
 
-          </div>
+          </div>
 
 
 
-          <div className="role-assignment-controls">
+          <div className="role-assignment-controls">
 
-            <select
+            <select
 
-              value={selectedRoleCode}
+              value={selectedRoleCode}
 
-              onChange={(event) =>
+              onChange={(event) =>
 
-                onRoleCodeChange(event.target.value)
+                onRoleCodeChange(event.target.value)
 
-              }
+              }
 
-              disabled={
+              disabled={
 
-                loadingRoles ||
+                loadingRoles ||
 
-                assigningRole ||
+                assigningRole ||
 
-                availableRoles.length === 0
+                availableRoles.length === 0
 
-              }
+              }
 
-              aria-label="Select role to assign"
+              aria-label="Select role to assign"
 
-            >
+            >
 
-              <option value="">
+              <option value="">
 
-                {loadingRoles
+                {loadingRoles
 
-                  ? 'Loading roles...'
+                  ? 'Loading roles...'
 
-                  : availableRoles.length === 0
+                  : availableRoles.length === 0
 
-                    ? 'No additional roles available'
+                    ? 'No additional roles available'
 
-                    : 'Select a role...'}
+                    : 'Select a role...'}
 
-              </option>
+              </option>
 
 
 
-              {availableRoles.map((role) => (
+              {availableRoles.map((role) => (
 
-                <option
+                <option
 
-                  key={role.id}
+                  key={role.id}
 
-                  value={role.code}
+                  value={role.code}
 
-                >
+                >
 
-                  {role.name || formatRoleName(role.code)}
+                  {role.name || formatRoleName(role.code)}
 
-                  {' — '}
+                  {' — '}
 
-                  {formatScopeLevel(role.scope_level)}
+                  {formatScopeLevel(role.scope_level)}
 
-                </option>
+                </option>
 
-              ))}
+              ))}
 
-            </select>
+            </select>
 
 
 
-            <button
+            <button
 
-              type="button"
+              type="button"
 
-              className="primary-button"
+              className="primary-button"
 
-              disabled={
+              disabled={
 
-                !selectedRoleCode ||
+                !selectedRoleCode ||
 
-                assigningRole ||
+                assigningRole ||
 
-                loadingRoles
+                loadingRoles
 
-              }
+              }
 
-              onClick={onAssignRole}
+              onClick={onAssignRole}
 
-            >
+            >
 
-              {assigningRole
+              {assigningRole
 
-                ? 'Assigning...'
+                ? 'Assigning...'
 
-                : 'Assign role'}
+                : 'Assign role'}
 
-            </button>
+            </button>
 
-          </div>
+          </div>
 
 
 
-          {rolesError && (
+          {rolesError && (
 
-            <p className="role-assignment-error">
+            <p className="role-assignment-error">
 
-              {rolesError}
+              {rolesError}
 
-            </p>
+            </p>
 
-          )}
+          )}
 
-        </div>
+        </div>
 
 
 
-        {user.roles.length === 0 ? (
+        {user.roles.length === 0 ? (
 
-          <div className="no-role-card">
+          <div className="no-role-card">
 
-            <span className="no-role-icon">
+            <span className="no-role-icon">
 
-              !
+              !
 
-            </span>
+            </span>
 
 
 
-            <div>
+            <div>
 
-              <strong>
+              <strong>
 
-                No active roles
+                No active roles
 
-              </strong>
+              </strong>
 
 
 
-              <p>
+              <p>
 
-                This account currently has no
+                This account currently has no
 
-                active AAKAR roles assigned.
+                active AAKAR roles assigned.
 
-              </p>
+              </p>
 
-            </div>
+            </div>
 
-          </div>
+          </div>
 
-        ) : (
+        ) : (
 
-          <div className="role-list">
+          <div className="role-list">
 
-            {user.roles.map((role) => (
+            {user.roles.map((role) => (
 
-              <article
+              <article
 
-                className="role-card"
+                className="role-card"
 
-                key={role.id}
+                key={role.id}
 
-              >
+              >
 
-                <div className="role-card-top">
+                <div className="role-card-top">
 
-                  <div>
+                  <div>
 
-                    <span className="role-code">
+                    <span className="role-code">
 
-                      {role.code}
+                      {role.code}
 
-                    </span>
+                    </span>
 
 
 
-                    <h3>
+                    <h3>
 
-                      {role.name ||
+                      {role.name ||
 
-                        formatRoleName(
+                        formatRoleName(
 
-                          role.code,
+                          role.code,
 
-                        )}
+                        )}
 
-                    </h3>
+                    </h3>
 
-                  </div>
+                  </div>
 
 
 
-                  <div className="role-card-actions">
+                  <div className="role-card-actions">
 
-                    <span className="scope-badge">
+                    <span className="scope-badge">
 
-                      {formatScopeLevel(
+                      {formatScopeLevel(
 
-                        role.scope_level,
+                        role.scope_level,
 
-                      )}
+                      )}
 
-                    </span>
+                    </span>
 
 
 
-                    <button
+                    <button
 
-                      type="button"
+                      type="button"
 
-                      className="ghost-button role-remove-button"
+                      className="ghost-button role-remove-button"
 
-                      disabled={
+                      disabled={
 
-                        removingRoleCode ===
+                        removingRoleCode ===
 
-                        role.code
+                        role.code
 
-                      }
+                      }
 
-                      onClick={() =>
+                      onClick={() =>
 
-                        onRemoveRole(role.code)
+                        onRemoveRole(role.code)
 
-                      }
+                      }
 
-                    >
+                    >
 
-                      {removingRoleCode ===
+                      {removingRoleCode ===
 
-                      role.code
+                      role.code
 
-                        ? 'Removing...'
+                        ? 'Removing...'
 
-                        : 'Remove'}
+                        : 'Remove'}
 
-                    </button>
+                    </button>
 
-                  </div>
+                  </div>
 
-                </div>
+                </div>
 
 
 
-                {role.description && (
+                {role.description && (
 
-                  <p className="role-description">
+                  <p className="role-description">
 
-                    {role.description}
+                    {role.description}
 
-                  </p>
+                  </p>
 
-                )}
+                )}
 
-              </article>
+              </article>
 
-            ))}
+            ))}
 
-          </div>
+          </div>
 
-        )}
+        )}
 
-      </section>
+      </section>
 
 
 
-      {isCurrentUser && (
+      {isCurrentUser && (
 
-        <div className="authorization-note">
+        <div className="authorization-note">
 
-          <span>SECURITY</span>
+          <span>SECURITY</span>
 
 
 
-          <p>
+          <p>
 
-            Your own account status cannot be
+            Your own account status cannot be
 
-            changed from User Management. Role
+            changed from User Management. Role
 
-            assignments are managed by authorized
+            assignments are managed by authorized
 
-            administrators.
+            administrators.
 
-          </p>
+          </p>
 
-        </div>
+        </div>
 
-      )}
+      )}
 
-    </div>
+    </div>
 
-  );
+  );
 
 }
 
@@ -4308,9 +4333,9 @@ function UserDetailPanel({
 
 interface LoginFormProps {
 
-  onAuthenticated: (user: User) => void;
+  onAuthenticated: (user: User) => void;
 
-  onSwitchToRegister: () => void;
+  onSwitchToRegister: () => void;
 
 }
 
@@ -4318,249 +4343,249 @@ interface LoginFormProps {
 
 function LoginForm({
 
-  onAuthenticated,
+  onAuthenticated,
 
-  onSwitchToRegister,
+  onSwitchToRegister,
 
 }: LoginFormProps) {
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('');
 
-  const [password, setPassword] =
+  const [password, setPassword] =
 
-    useState('');
+    useState('');
 
 
 
-  const [error, setError] = useState('');
+  const [error, setError] = useState('');
 
-  const [loading, setLoading] =
+  const [loading, setLoading] =
 
-    useState(false);
+    useState(false);
 
 
 
-  const handleSubmit = async (
+  const handleSubmit = async (
 
-    event: FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
 
-  ) => {
+  ) => {
 
-    event.preventDefault();
+    event.preventDefault();
 
 
 
-    setError('');
+    setError('');
 
-    setLoading(true);
+    setLoading(true);
 
 
 
-    try {
+    try {
 
-      const response = await loginUser({
+      const response = await loginUser({
 
-        email,
+        email,
 
-        password,
+        password,
 
-      });
+      });
 
 
 
-      onAuthenticated(response.user);
+      onAuthenticated(response.user);
 
-    } catch (requestError) {
+    } catch (requestError) {
 
-      setError(
+      setError(
 
-        requestError instanceof Error
+        requestError instanceof Error
 
-          ? requestError.message
+          ? requestError.message
 
-          : 'Unable to sign in.',
+          : 'Unable to sign in.',
 
-      );
+      );
 
-    } finally {
+    } finally {
 
-      setLoading(false);
+      setLoading(false);
 
-    }
+    }
 
-  };
+  };
 
 
 
-  return (
+  return (
 
-    <>
+    <>
 
-      <div className="auth-heading">
+      <div className="auth-heading">
 
-        <p className="eyebrow">
+        <p className="eyebrow">
 
-          SECURE SIGN-IN
+          SECURE SIGN-IN
 
-        </p>
+        </p>
 
 
 
-        <h2>Welcome back</h2>
+        <h2>Welcome back</h2>
 
 
 
-        <p>
+        <p>
 
-          Sign in to access your AAKAR
+          Sign in to access your AAKAR
 
-          workspace.
+          workspace.
 
-        </p>
+        </p>
 
-      </div>
+      </div>
 
 
 
-      <form
+      <form
 
-        className="auth-form"
+        className="auth-form"
 
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit}
 
-      >
+      >
 
-        <label htmlFor="login-email">
+        <label htmlFor="login-email">
 
-          Email address
+          Email address
 
 
 
-          <input
+          <input
 
-            id="login-email"
+            id="login-email"
 
-            type="email"
+            type="email"
 
-            autoComplete="email"
+            autoComplete="email"
 
-            value={email}
+            value={email}
 
-            onChange={(event) =>
+            onChange={(event) =>
 
-              setEmail(event.target.value)
+              setEmail(event.target.value)
 
-            }
+            }
 
-            placeholder="name@department.gov.in"
+            placeholder="name@department.gov.in"
 
-            required
+            required
 
-          />
+          />
 
-        </label>
+        </label>
 
 
 
-        <label htmlFor="login-password">
+        <label htmlFor="login-password">
 
-          Password
+          Password
 
 
 
-          <input
+          <input
 
-            id="login-password"
+            id="login-password"
 
-            type="password"
+            type="password"
 
-            autoComplete="current-password"
+            autoComplete="current-password"
 
-            value={password}
+            value={password}
 
-            onChange={(event) =>
+            onChange={(event) =>
 
-              setPassword(
+              setPassword(
 
-                event.target.value,
+                event.target.value,
 
-              )
+              )
 
-            }
+            }
 
-            placeholder="Enter your password"
+            placeholder="Enter your password"
 
-            required
+            required
 
-          />
+          />
 
-        </label>
+        </label>
 
 
 
-        {error && (
+        {error && (
 
-          <div
+          <div
 
-            className="error-message"
+            className="error-message"
 
-            role="alert"
+            role="alert"
 
-          >
+          >
 
-            {error}
+            {error}
 
-          </div>
+          </div>
 
-        )}
+        )}
 
 
 
-        <button
+        <button
 
-          className="primary-button"
+          className="primary-button"
 
-          type="submit"
+          type="submit"
 
-          disabled={loading}
+          disabled={loading}
 
-        >
+        >
 
-          {loading
+          {loading
 
-            ? 'Signing in...'
+            ? 'Signing in...'
 
-            : 'Sign in'}
+            : 'Sign in'}
 
-        </button>
+        </button>
 
-      </form>
+      </form>
 
 
 
-      <p className="auth-switch">
+      <p className="auth-switch">
 
-        New to AAKAR?
+        New to AAKAR?
 
 
 
-        <button
+        <button
 
-          type="button"
+          type="button"
 
-          onClick={onSwitchToRegister}
+          onClick={onSwitchToRegister}
 
-        >
+        >
 
-          Create an account
+          Create an account
 
-        </button>
+        </button>
 
-      </p>
+      </p>
 
-    </>
+    </>
 
-  );
+  );
 
 }
 
@@ -4568,9 +4593,9 @@ function LoginForm({
 
 interface RegisterFormProps {
 
-  onRegistered: () => void;
+  onRegistered: () => void;
 
-  onSwitchToLogin: () => void;
+  onSwitchToLogin: () => void;
 
 }
 
@@ -4578,375 +4603,375 @@ interface RegisterFormProps {
 
 function RegisterForm({
 
-  onRegistered,
+  onRegistered,
 
-  onSwitchToLogin,
+  onSwitchToLogin,
 
 }: RegisterFormProps) {
 
-  const [fullName, setFullName] =
+  const [fullName, setFullName] =
 
-    useState('');
+    useState('');
 
 
 
-  const [email, setEmail] =
+  const [email, setEmail] =
 
-    useState('');
+    useState('');
 
 
 
-  const [password, setPassword] =
+  const [password, setPassword] =
 
-    useState('');
+    useState('');
 
 
 
-  const [error, setError] =
+  const [error, setError] =
 
-    useState('');
+    useState('');
 
 
 
-  const [success, setSuccess] =
+  const [success, setSuccess] =
 
-    useState('');
+    useState('');
 
 
 
-  const [loading, setLoading] =
+  const [loading, setLoading] =
 
-    useState(false);
+    useState(false);
 
 
 
-  const handleSubmit = async (
+  const handleSubmit = async (
 
-    event: FormEvent<HTMLFormElement>,
+    event: FormEvent<HTMLFormElement>,
 
-  ) => {
+  ) => {
 
-    event.preventDefault();
+    event.preventDefault();
 
 
 
-    setError('');
+    setError('');
 
-    setSuccess('');
+    setSuccess('');
 
-    setLoading(true);
+    setLoading(true);
 
 
 
-    try {
+    try {
 
-      await registerUser({
+      await registerUser({
 
-        full_name: fullName,
+        full_name: fullName,
 
-        email,
+        email,
 
-        password,
+        password,
 
-      });
+      });
 
 
 
-      setFullName('');
+      setFullName('');
 
-      setEmail('');
+      setEmail('');
 
-      setPassword('');
+      setPassword('');
 
 
 
-      setSuccess(
+      setSuccess(
 
-        'Account created successfully. You can now sign in.',
+        'Account created successfully. You can now sign in.',
 
-      );
+      );
 
-    } catch (requestError) {
+    } catch (requestError) {
 
-      setError(
+      setError(
 
-        requestError instanceof Error
+        requestError instanceof Error
 
-          ? requestError.message
+          ? requestError.message
 
-          : 'Unable to create the account.',
+          : 'Unable to create the account.',
 
-      );
+      );
 
-    } finally {
+    } finally {
 
-      setLoading(false);
+      setLoading(false);
 
-    }
+    }
 
-  };
+  };
 
 
 
-  return (
+  return (
 
-    <>
+    <>
 
-      <div className="auth-heading">
+      <div className="auth-heading">
 
-        <p className="eyebrow">
+        <p className="eyebrow">
 
-          ACCOUNT REGISTRATION
+          ACCOUNT REGISTRATION
 
-        </p>
+        </p>
 
 
 
-        <h2>Create your account</h2>
+        <h2>Create your account</h2>
 
 
 
-        <p>
+        <p>
 
-          Set up an AAKAR account for secure
+          Set up an AAKAR account for secure
 
-          platform access.
+          platform access.
 
-        </p>
+        </p>
 
-      </div>
+      </div>
 
 
 
-      <form
+      <form
 
-        className="auth-form"
+        className="auth-form"
 
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit}
 
-      >
+      >
 
-        <label htmlFor="register-name">
+        <label htmlFor="register-name">
 
-          Full name
+          Full name
 
 
 
-          <input
+          <input
 
-            id="register-name"
+            id="register-name"
 
-            type="text"
+            type="text"
 
-            autoComplete="name"
+            autoComplete="name"
 
-            value={fullName}
+            value={fullName}
 
-            onChange={(event) =>
+            onChange={(event) =>
 
-              setFullName(
+              setFullName(
 
-                event.target.value,
+                event.target.value,
 
-              )
+              )
 
-            }
+            }
 
-            placeholder="Enter your full name"
+            placeholder="Enter your full name"
 
-            minLength={2}
+            minLength={2}
 
-            maxLength={150}
+            maxLength={150}
 
-            required
+            required
 
-          />
+          />
 
-        </label>
+        </label>
 
 
 
-        <label htmlFor="register-email">
+        <label htmlFor="register-email">
 
-          Email address
+          Email address
 
 
 
-          <input
+          <input
 
-            id="register-email"
+            id="register-email"
 
-            type="email"
+            type="email"
 
-            autoComplete="email"
+            autoComplete="email"
 
-            value={email}
+            value={email}
 
-            onChange={(event) =>
+            onChange={(event) =>
 
-              setEmail(
+              setEmail(
 
-                event.target.value,
+                event.target.value,
 
-              )
+              )
 
-            }
+            }
 
-            placeholder="name@department.gov.in"
+            placeholder="name@department.gov.in"
 
-            required
+            required
 
-          />
+          />
 
-        </label>
+        </label>
 
 
 
-        <label htmlFor="register-password">
+        <label htmlFor="register-password">
 
-          Password
+          Password
 
 
 
-          <input
+          <input
 
-            id="register-password"
+            id="register-password"
 
-            type="password"
+            type="password"
 
-            autoComplete="new-password"
+            autoComplete="new-password"
 
-            value={password}
+            value={password}
 
-            onChange={(event) =>
+            onChange={(event) =>
 
-              setPassword(
+              setPassword(
 
-                event.target.value,
+                event.target.value,
 
-              )
+              )
 
-            }
+            }
 
-            placeholder="Minimum 8 characters"
+            placeholder="Minimum 8 characters"
 
-            minLength={8}
+            minLength={8}
 
-            maxLength={128}
+            maxLength={128}
 
-            required
+            required
 
-          />
+          />
 
-        </label>
+        </label>
 
 
 
-        {error && (
+        {error && (
 
-          <div
+          <div
 
-            className="error-message"
+            className="error-message"
 
-            role="alert"
+            role="alert"
 
-          >
+          >
 
-            {error}
+            {error}
 
-          </div>
+          </div>
 
-        )}
+        )}
 
 
 
-        {success && (
+        {success && (
 
-          <div
+          <div
 
-            className="success-message"
+            className="success-message"
 
-            role="status"
+            role="status"
 
-          >
+          >
 
-            {success}
+            {success}
 
-          </div>
+          </div>
 
-        )}
+        )}
 
 
 
-        <button
+        <button
 
-          className="primary-button"
+          className="primary-button"
 
-          type="submit"
+          type="submit"
 
-          disabled={loading}
+          disabled={loading}
 
-        >
+        >
 
-          {loading
+          {loading
 
-            ? 'Creating account...'
+            ? 'Creating account...'
 
-            : 'Create account'}
+            : 'Create account'}
 
-        </button>
+        </button>
 
-      </form>
+      </form>
 
 
 
-      <p className="auth-switch">
+      <p className="auth-switch">
 
-        Already have an account?
+        Already have an account?
 
 
 
-        <button
+        <button
 
-          type="button"
+          type="button"
 
-          onClick={() => {
+          onClick={() => {
 
-            onRegistered();
+            onRegistered();
 
-            setSuccess('');
+            setSuccess('');
 
-            setError('');
+            setError('');
 
-          }}
+          }}
 
-        >
+        >
 
-          Sign in
+          Sign in
 
-        </button>
+        </button>
 
-      </p>
+      </p>
 
 
 
-      <button
+      <button
 
-        type="button"
+        type="button"
 
-        className="back-button"
+        className="back-button"
 
-        onClick={onSwitchToLogin}
+        onClick={onSwitchToLogin}
 
-      >
+      >
 
-        ← Back to sign in
+        ← Back to sign in
 
-      </button>
+      </button>
 
-    </>
+    </>
 
-  );
+  );
 
 }
 
