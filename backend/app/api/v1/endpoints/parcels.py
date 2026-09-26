@@ -4,14 +4,23 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, require_permission
+from app.api.deps import require_permission
 from app.db.session import get_db
+from app.integrations.land_records.resolver import (
+    get_land_record_provider,
+)
 from app.models.user import User
+from app.schemas.land_records import (
+    LandRecordRetrievalResponse,
+)
 from app.schemas.parcels import (
     CreateParcelRequest,
     ParcelListResponse,
     ParcelResponse,
     UpdateParcelRequest,
+)
+from app.services.land_record_service import (
+    retrieve_land_record,
 )
 from app.services.parcel_service import (
     create_parcel,
@@ -143,6 +152,46 @@ def get_parcel_by_id(
         )
 
     return _parcel_response(parcel)
+
+
+@router.post(
+    "/{parcel_id}/land-record/retrieve",
+    response_model=LandRecordRetrievalResponse,
+)
+def retrieve_parcel_land_record(
+    parcel_id: UUID,
+    current_user: User = Depends(
+        require_permission(
+            "parcel.land_record.retrieve"
+        )
+    ),
+    db: Session = Depends(get_db),
+) -> LandRecordRetrievalResponse:
+    provider = get_land_record_provider()
+
+    try:
+        retrieval = retrieve_land_record(
+            db,
+            parcel_id=parcel_id,
+            provider=provider,
+            actor_user_id=current_user.id,
+        )
+
+        return LandRecordRetrievalResponse.model_validate(
+            retrieval
+        )
+
+    except ValueError as exc:
+        if str(exc) == "Parcel not found.":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=str(exc),
+            ) from exc
+
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
 
 
 @router.post(
