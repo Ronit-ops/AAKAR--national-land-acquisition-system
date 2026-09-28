@@ -241,6 +241,12 @@ class AcquisitionCase(Base):
         cascade="all, delete-orphan",
     )
 
+    survey_records: Mapped[list["SurveyRecord"]] = relationship(
+        back_populates="acquisition_case",
+        cascade="all, delete-orphan",
+        order_by="SurveyRecord.created_at",
+    )
+
     # -----------------------------------------------------------------------
     # Database constraints / indexes
     # -----------------------------------------------------------------------

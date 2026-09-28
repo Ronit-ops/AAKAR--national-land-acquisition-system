@@ -70,6 +70,7 @@ import ProjectManagementWorkspace from './components/ProjectManagementWorkspace'
 import LandRequirementWorkspace from './components/LandRequirementWorkspace';
 import AcquisitionCaseWorkspace from './components/AcquisitionCaseWorkspace';
 import ParcelManagementWorkspace from './components/ParcelManagementWorkspace';
+import SurveyManagementWorkspace from './components/SurveyManagementWorkspace';
 
 
 
@@ -97,6 +98,7 @@ type WorkspaceMode =
 
   | 'acquisitionCases'
   | 'parcels'
+  | 'survey'
 
   | 'users'
 
@@ -225,6 +227,11 @@ const OPERATIONS_NAVIGATION: NavigationItem[] = [
     workspace: 'parcels',
     label: 'Parcel Management',
     permission: 'parcel.read',
+  },
+  {
+    workspace: 'survey',
+    label: 'Survey & Measurement',
+    permission: 'survey.read',
   },
 
 ];
@@ -843,6 +850,15 @@ function App() {
       );
     }
 
+
+
+    if (workspace === 'survey') {
+      if (!hasPermission('survey.read')) {
+        return null;
+      }
+
+      return <SurveyManagementWorkspace />;
+    }
 
 
     if (workspace === 'users') {
